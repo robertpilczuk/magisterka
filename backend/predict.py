@@ -86,7 +86,7 @@ def get_recommendations(userId, ratings, movies, users, top_n=10):
         vec = build_feature_vector(user_row, movie_row, user_avg, m_avg, m_count)
         vectors.append(vec)
 
-    X = scaler.transform(np.array(vectors))
+    X = X = scaler.transform(pd.DataFrame(vectors, columns=FEATURE_COLS))
     predicted_ratings = lr.predict(X)
     predicted_ratings = np.clip(predicted_ratings, 1.0, 5.0)
 
@@ -137,3 +137,35 @@ def get_validation(userId, ratings, movies, users):
             for i, (_, row) in enumerate(user_ratings.head(20).iterrows())
         ],
     }
+
+
+def get_recommendations_logistic(userId, ratings, movies, users, top_n=10):
+    """Rekomendacje na podstawie regresji logistycznej (prawdopodobieństwo polubienia)."""
+    log_reg = joblib.load(os.path.join(MODEL_DIR, "logistic_model.pkl"))
+
+    user_row = users[users["userId"] == userId].iloc[0]
+    rated_movies = set(ratings[ratings["userId"] == userId]["movieId"])
+    unrated = movies[~movies["movieId"].isin(rated_movies)].copy()
+    user_avg = ratings[ratings["userId"] == userId]["rating"].mean()
+    movie_stats = ratings.groupby("movieId")["rating"].agg(["mean", "count"])
+
+    vectors = []
+    for _, movie_row in unrated.iterrows():
+        mid = movie_row["movieId"]
+        m_avg = movie_stats.loc[mid, "mean"] if mid in movie_stats.index else 3.5
+        m_count = movie_stats.loc[mid, "count"] if mid in movie_stats.index else 0
+        vec = build_feature_vector(user_row, movie_row, user_avg, m_avg, m_count)
+        vectors.append(vec)
+
+    X = X = scaler.transform(pd.DataFrame(vectors, columns=FEATURE_COLS))
+    probabilities = log_reg.predict_proba(X)[:, 1]
+
+    unrated = unrated.copy()
+    unrated["like_probability"] = probabilities
+    top = unrated.nlargest(top_n, "like_probability")
+
+    return (
+        top[["movieId", "title", "genres", "like_probability"]]
+        .assign(like_probability=lambda x: x["like_probability"].round(4))
+        .to_dict(orient="records")
+    )

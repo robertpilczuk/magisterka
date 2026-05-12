@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from data_loader import load_data
-from predict import get_recommendations, get_validation
+from predict import get_recommendations, get_validation, get_recommendations_logistic
 
 app = FastAPI(title="Film Recommender API")
 
@@ -54,3 +54,11 @@ def user_info(userId: int):
         "ratingsCount": len(user_ratings),
         "avgRating": round(float(user_ratings["rating"].mean()), 2),
     }
+
+
+@app.get("/recommend-logistic/{userId}")
+def recommend_logistic(userId: int, top_n: int = 10):
+    if userId not in users["userId"].values:
+        raise HTTPException(status_code=404, detail=f"Użytkownik {userId} nie istnieje")
+    results = get_recommendations_logistic(userId, ratings, movies, users, top_n)
+    return {"userId": userId, "recommendations": results}
