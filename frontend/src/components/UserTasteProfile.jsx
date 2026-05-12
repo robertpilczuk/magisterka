@@ -85,7 +85,7 @@ function CategoryBlock({ title, tooltip, movies, color, count }) {
     )
 }
 
-export default function UserTasteProfile({ taste }) {
+export default function UserTasteProfile({ taste, excludedGenres, onToggleGenre }) {
     if (!taste) return null
 
     const { topGenres, lubi, srednie, slabe, stats } = taste
@@ -132,17 +132,23 @@ export default function UserTasteProfile({ taste }) {
             {topGenres.length > 0 && (
                 <div style={{ marginBottom: '16px' }}>
                     <div style={{ fontSize: '12px', color: '#888', marginBottom: '6px' }}>
-                        Ulubione gatunki (na podstawie najwyżej ocenianych filmów)
+                        Ulubione gatunki — kliknij żeby wykluczyć z rekomendacji:
                     </div>
                     <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                         {topGenres.map(g => (
-                            <span key={g} style={{
-                                padding: '4px 10px', background: '#e8f4fd',
-                                color: '#4a90d9', borderRadius: '20px',
-                                fontSize: '12px', fontWeight: '600'
-                            }}>
-                                {GENRE_PL[g] || g}
-                            </span>
+                            <button key={g}
+                                onClick={() => onToggleGenre && onToggleGenre(g)}
+                                style={{
+                                    padding: '4px 10px',
+                                    background: excludedGenres?.includes(g) ? '#fdf0f0' : '#e8f4fd',
+                                    color: excludedGenres?.includes(g) ? '#e74c3c' : '#4a90d9',
+                                    border: `1px solid ${excludedGenres?.includes(g) ? '#e74c3c' : '#4a90d9'}`,
+                                    borderRadius: '20px', fontSize: '12px', fontWeight: '600',
+                                    cursor: 'pointer', transition: 'all 0.15s',
+                                    textDecoration: excludedGenres?.includes(g) ? 'line-through' : 'none'
+                                }}>
+                                {excludedGenres?.includes(g) ? '✕ ' : ''}{GENRE_PL[g] || g}
+                            </button>
                         ))}
                     </div>
                 </div>
@@ -175,3 +181,4 @@ export default function UserTasteProfile({ taste }) {
         </div>
     )
 }
+

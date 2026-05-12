@@ -9,6 +9,7 @@ import UserComparison from './components/UserComparison'
 import NewUserFlow from './components/NewUserFlow'
 import Spinner from './components/Spinner'
 import UserTasteProfile from './components/UserTasteProfile'
+import GenreFilter from './components/GenreFilter'
 
 const API = 'http://localhost:8000'
 
@@ -24,6 +25,7 @@ export default function App() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [tasteProfile, setTasteProfile] = useState(null)
+  const [excludedGenres, setExcludedGenres] = useState([])
 
   // stan dla porównania
   const [compareUserId, setCompareUserId] = useState('')
@@ -81,6 +83,13 @@ export default function App() {
     transition: 'all 0.2s'
   })
 
+  function filterByGenre(recs) {
+    if (excludedGenres.length === 0) return recs
+    return recs.filter(rec =>
+      !excludedGenres.some(g => rec.genres.includes(g))
+    )
+  }
+
   return (
     <div style={{
       maxWidth: '1200px', margin: '0 auto', padding: '24px',
@@ -134,7 +143,16 @@ export default function App() {
           {!loading && userProfile && (
             <>
               <UserProfile profile={userProfile} />
-              <UserTasteProfile taste={tasteProfile} />
+              <UserTasteProfile
+                taste={tasteProfile}
+                excludedGenres={excludedGenres}
+                onToggleGenre={(g) => {
+                  setExcludedGenres(prev =>
+                    prev.includes(g) ? prev.filter(x => x !== g) : [...prev, g]
+                  )
+                }}
+              />
+              <GenreFilter selected={excludedGenres} onChange={setExcludedGenres} />
 
               {/* porównanie użytkowników */}
               <div style={{
@@ -179,9 +197,8 @@ export default function App() {
                   <p style={{ color: '#666', fontSize: '14px', marginBottom: '16px' }}>
                     Przewidywana ocena (1–5)
                   </p>
-                  {recsLinear.map((rec, i) => (
-                    <RecommendationCard key={rec.movieId} rank={i + 1}
-                      rec={rec} type="linear" />
+                  {filterByGenre(recsLinear).map((rec, i) => (
+                    <RecommendationCard key={rec.movieId} rank={i + 1} rec={rec} type="linear" />
                   ))}
                 </div>
                 <div>
@@ -191,9 +208,8 @@ export default function App() {
                   <p style={{ color: '#666', fontSize: '14px', marginBottom: '16px' }}>
                     Prawdopodobieństwo polubienia (%)
                   </p>
-                  {recsLogistic.map((rec, i) => (
-                    <RecommendationCard key={rec.movieId} rank={i + 1}
-                      rec={rec} type="logistic" />
+                  {filterByGenre(recsLogistic).map((rec, i) => (
+                    <RecommendationCard key={rec.movieId} rank={i + 1} rec={rec} type="logistic" />
                   ))}
                 </div>
               </div>
