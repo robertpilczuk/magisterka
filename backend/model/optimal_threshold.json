@@ -1,0 +1,5 @@
+{
+  "optimal_threshold": 0.39,
+  "f1_at_optimal": 0.7808,
+  "f1_at_default": 0.7696
+}
