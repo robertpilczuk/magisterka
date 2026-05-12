@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { setLang, getLang } from './i18n'
 import axios from 'axios'
 import SearchBar from './components/SearchBar'
 import UserProfile from './components/UserProfile'
@@ -33,6 +34,16 @@ export default function App() {
   const [compareUserId, setCompareUserId] = useState('')
   const [comparison, setComparison] = useState(null)
   const [compareLoading, setCompareLoading] = useState(false)
+
+  const [lang, setLangState] = useState('PL')
+
+  function toggleLang() {
+    const newLang = lang === 'PL' ? 'EN' : 'PL'
+    setLang(newLang)
+    setLangState(newLang)
+    // wymuś przeładowanie strony — najprostsze rozwiązanie
+    window.location.reload()
+  }
 
   async function fetchAll(id) {
     setLoading(true)
@@ -97,6 +108,17 @@ export default function App() {
       maxWidth: '1200px', margin: '0 auto', padding: '24px',
       fontFamily: 'sans-serif'
     }}>
+      {/* przełącznik języka */}
+      <div style={{ position: 'fixed', top: '16px', right: '16px', zIndex: 1000 }}>
+        <button onClick={toggleLang} style={{
+          padding: '6px 14px', borderRadius: '20px',
+          border: '1px solid #ddd', background: 'white',
+          cursor: 'pointer', fontSize: '13px', fontWeight: '600',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+        }}>
+          {lang === 'PL' ? '🇬🇧 EN' : '🇵🇱 PL'}
+        </button>
+      </div>
       <h1 style={{ textAlign: 'center', marginBottom: '4px' }}>🎬 Film Recommender</h1>
       <p style={{ textAlign: 'center', color: '#666', marginBottom: '24px' }}>
         Predykcja doboru treści audiowizualnych — regresja liniowa vs logistyczna
