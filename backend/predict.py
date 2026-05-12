@@ -169,3 +169,170 @@ def get_recommendations_logistic(userId, ratings, movies, users, top_n=10):
         .assign(like_probability=lambda x: x["like_probability"].round(4))
         .to_dict(orient="records")
     )
+
+
+def get_similar_users(gender=None, age=None, occupation=None, limit=20):
+    """Zwraca listę użytkowników pasujących do filtrów demograficznych."""
+    from data_loader import load_data
+
+    ratings, movies, users = load_data()
+
+    filtered = users.copy()
+
+    if gender is not None:
+        filtered = filtered[filtered["gender"] == gender]
+    if age is not None:
+        filtered = filtered[filtered["age"] == age]
+    if occupation is not None:
+        filtered = filtered[filtered["occupation"] == occupation]
+
+    if len(filtered) == 0:
+        return []
+
+    # dodaj statystyki
+    user_stats = (
+        ratings.groupby("userId")["rating"].agg(["count", "mean"]).reset_index()
+    )
+    user_stats.columns = ["userId", "ratingsCount", "avgRating"]
+
+    filtered = filtered.merge(user_stats, on="userId", how="left")
+    filtered = filtered.sort_values("ratingsCount", ascending=False).head(limit)
+
+    return (
+        filtered[["userId", "gender", "age", "occupation", "ratingsCount", "avgRating"]]
+        .fillna(0)
+        .to_dict(orient="records")
+    )
+
+
+def get_new_user_recommendations(
+    user_ratings_input, age=25, gender="M", occupation=4, top_n=10
+):
+    """
+    Generuje rekomendacje dla nowego użytkownika na podstawie
+    kilku ocen które właśnie wystawił — cold start onboarding.
+
+    user_ratings_input: lista słowników [{movieId: int, rating: float}]
+    """
+    from data_loader import load_data
+
+    ratings, movies, users = load_data()
+
+    # zbuduj tymczasowy profil użytkownika
+    rated_ids = [r["movieId"] for r in user_ratings_input]
+    rated_dict = {r["movieId"]: r["rating"] for r in user_ratings_input}
+    user_avg = np.mean([r["rating"] for r in user_ratings_input])
+
+    # tymczasowy wiersz użytkownika
+    user_row = pd.Series(
+        {
+            "userId": -1,
+            "gender": gender,
+            "age": age,
+            "occupation": occupation,
+            "zip": "00000",
+        }
+    )
+
+    # filmy których user jeszcze nie oceniał
+    unrated = movies[~movies["movieId"].isin(rated_ids)].copy()
+    movie_stats = ratings.groupby("movieId")["rating"].agg(["mean", "count"])
+
+    vectors = []
+    for _, movie_row in unrated.iterrows():
+        mid = movie_row["movieId"]
+        m_avg = movie_stats.loc[mid, "mean"] if mid in movie_stats.index else 3.5
+        m_count = movie_stats.loc[mid, "count"] if mid in movie_stats.index else 0
+        vec = build_feature_vector(user_row, movie_row, user_avg, m_avg, m_count)
+        vectors.append(vec)
+
+    X = scaler.transform(pd.DataFrame(vectors, columns=FEATURE_COLS))
+
+    # regresja liniowa
+    pred_linear = np.clip(lr.predict(X), 1.0, 5.0)
+
+    # regresja logistyczna z optymalnym progiem
+    import json, os
+
+    threshold_path = os.path.join(MODEL_DIR, "optimal_threshold.json")
+    if os.path.exists(threshold_path):
+        with open(threshold_path) as f:
+            threshold_data = json.load(f)
+        optimal_threshold = threshold_data["optimal_threshold"]
+    else:
+        optimal_threshold = 0.5
+
+    log_reg_model = joblib.load(os.path.join(MODEL_DIR, "logistic_model.pkl"))
+    pred_log_proba = log_reg_model.predict_proba(X)[:, 1]
+
+    unrated = unrated.copy()
+    unrated["predicted_rating"] = pred_linear
+    unrated["like_probability"] = pred_log_proba
+    unrated["combined_score"] = (pred_linear / 5.0) * 0.5 + pred_log_proba * 0.5
+
+    top_linear = unrated.nlargest(top_n, "predicted_rating")
+    top_logistic = unrated.nlargest(top_n, "like_probability")
+    top_combined = unrated.nlargest(top_n, "combined_score")
+
+    def to_records(df, score_col, score_type):
+        rows = []
+        for _, r in df.iterrows():
+            rows.append(
+                {
+                    "movieId": int(r["movieId"]),
+                    "title": r["title"],
+                    "genres": r["genres"],
+                    score_type: round(float(r[score_col]), 4),
+                }
+            )
+        return rows
+
+    return {
+        "user_profile": {
+            "age": age,
+            "gender": gender,
+            "occupation": occupation,
+            "ratingsGiven": len(user_ratings_input),
+            "avgRating": round(float(user_avg), 2),
+        },
+        "optimal_threshold": optimal_threshold,
+        "linear": to_records(top_linear, "predicted_rating", "predicted_rating"),
+        "logistic": to_records(top_logistic, "like_probability", "like_probability"),
+        "combined": to_records(top_combined, "combined_score", "combined_score"),
+    }
+
+
+def get_user_comparison(userId1, userId2, ratings, movies, users, top_n=10):
+    """Porównuje rekomendacje dla dwóch użytkowników."""
+
+    recs1 = get_recommendations(userId1, ratings, movies, users, top_n=20)
+    recs2 = get_recommendations(userId2, ratings, movies, users, top_n=20)
+
+    ids1 = {r["movieId"] for r in recs1}
+    ids2 = {r["movieId"] for r in recs2}
+
+    common_ids = ids1 & ids2
+    only1 = [r for r in recs1 if r["movieId"] in ids1 - ids2][:top_n]
+    only2 = [r for r in recs2 if r["movieId"] in ids2 - ids1][:top_n]
+    common = [r for r in recs1 if r["movieId"] in common_ids][:top_n]
+
+    def user_summary(uid):
+        u = users[users["userId"] == uid].iloc[0]
+        ur = ratings[ratings["userId"] == uid]
+        return {
+            "userId": uid,
+            "gender": u["gender"],
+            "age": int(u["age"]),
+            "occupation": int(u["occupation"]),
+            "ratingsCount": len(ur),
+            "avgRating": round(float(ur["rating"].mean()), 2),
+        }
+
+    return {
+        "user1": user_summary(userId1),
+        "user2": user_summary(userId2),
+        "onlyForUser1": only1,
+        "onlyForUser2": only2,
+        "common": common,
+        "similarityPct": round(len(common_ids) / 20 * 100, 1),
+    }
