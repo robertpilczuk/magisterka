@@ -131,6 +131,7 @@ def get_validation(userId, ratings, movies, users):
         "samples": [
             {
                 "title": row["title"],
+                "genres": row["genres"],
                 "actual": int(actual[i]),
                 "predicted": round(float(predicted[i]), 2),
             }
@@ -339,16 +340,13 @@ def get_user_comparison(userId1, userId2, ratings, movies, users, top_n=10):
 
 
 def get_user_taste_profile(userId, ratings, movies):
-    """Zwraca filmy użytkownika podzielone na trzy kategorie:
-    lubi (4-5), średnie (3), słabe (1-2)."""
-
     user_ratings = (
         ratings[ratings["userId"] == userId]
         .merge(movies[["movieId", "title", "genres"]], on="movieId")
         .sort_values("rating", ascending=False)
     )
 
-    def to_list(df, n=8):
+    def to_list(df, n=50):
         return (
             df[["movieId", "title", "genres", "rating"]]
             .head(n)
@@ -359,7 +357,6 @@ def get_user_taste_profile(userId, ratings, movies):
     srednie = user_ratings[user_ratings["rating"] == 3]
     slabe = user_ratings[user_ratings["rating"] <= 2]
 
-    # top gatunki
     all_genres = []
     for g in lubi["genres"]:
         all_genres.extend(g.split("|"))

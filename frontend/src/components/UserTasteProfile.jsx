@@ -1,24 +1,13 @@
+import { useState } from 'react'
 import Tooltip from './Tooltip'
 
 const GENRE_PL = {
-    'Action': 'Akcja',
-    'Adventure': 'Przygodowy',
-    'Animation': 'Animacja',
-    "Children's": 'Dla dzieci',
-    'Comedy': 'Komedia',
-    'Crime': 'Kryminał',
-    'Documentary': 'Dokumentalny',
-    'Drama': 'Dramat',
-    'Fantasy': 'Fantasy',
-    'Film-Noir': 'Film Noir',
-    'Horror': 'Horror',
-    'Musical': 'Musical',
-    'Mystery': 'Thriller psychologiczny',
-    'Romance': 'Romans',
-    'Sci-Fi': 'Science Fiction',
-    'Thriller': 'Thriller',
-    'War': 'Wojenny',
-    'Western': 'Western'
+    'Action': 'Akcja', 'Adventure': 'Przygodowy', 'Animation': 'Animacja',
+    "Children's": 'Dla dzieci', 'Comedy': 'Komedia', 'Crime': 'Kryminał',
+    'Documentary': 'Dokumentalny', 'Drama': 'Dramat', 'Fantasy': 'Fantasy',
+    'Film-Noir': 'Film Noir', 'Horror': 'Horror', 'Musical': 'Musical',
+    'Mystery': 'Thriller psych.', 'Romance': 'Romans', 'Sci-Fi': 'Sci-Fi',
+    'Thriller': 'Thriller', 'War': 'Wojenny', 'Western': 'Western'
 }
 
 function translateGenres(genres) {
@@ -28,9 +17,8 @@ function translateGenres(genres) {
 function MovieRow({ movie, color }) {
     return (
         <div style={{
-            padding: '8px 10px', marginBottom: '5px',
-            background: 'white', borderRadius: '8px',
-            borderLeft: `3px solid ${color}`,
+            padding: '8px 10px', marginBottom: '5px', background: 'white',
+            borderRadius: '8px', borderLeft: `3px solid ${color}`,
             display: 'flex', justifyContent: 'space-between',
             alignItems: 'center', gap: '8px'
         }}>
@@ -52,7 +40,20 @@ function MovieRow({ movie, color }) {
     )
 }
 
-function CategoryBlock({ title, tooltip, movies, color, count }) {
+const PAGE_SIZE = 8
+
+function CategoryBlock({ title, tooltip, movies, color, count,
+    excludedGenres, onToggleGenre }) {
+    const [page, setPage] = useState(1)
+
+    const filtered = excludedGenres?.length > 0
+        ? movies.filter(m => !excludedGenres.some(g => m.genres.includes(g)))
+        : movies
+
+    const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
+    const visible = filtered.slice(0, page * PAGE_SIZE)
+    const hasMore = page * PAGE_SIZE < filtered.length
+
     return (
         <div style={{ flex: 1, minWidth: '220px' }}>
             <Tooltip text={tooltip}>
@@ -60,26 +61,39 @@ function CategoryBlock({ title, tooltip, movies, color, count }) {
                     margin: '0 0 10px 0', color,
                     borderBottom: `2px solid ${color}`,
                     paddingBottom: '6px', cursor: 'help',
-                    borderBottom: `2px solid ${color}`,
                     display: 'flex', justifyContent: 'space-between',
                     alignItems: 'center'
                 }}>
                     <span>{title}</span>
-                    <span style={{
-                        fontSize: '12px', fontWeight: 'normal',
-                        color: '#888'
-                    }}>
-                        {count} filmów
+                    <span style={{ fontSize: '12px', fontWeight: 'normal', color: '#888' }}>
+                        {filtered.length}/{count} filmów
                     </span>
                 </h4>
             </Tooltip>
-            {movies.length === 0
-                ? <div style={{ fontSize: '13px', color: '#aaa', fontStyle: 'italic' }}>
-                    Brak filmów w tej kategorii
+
+            {filtered.length === 0
+                ? <div style={{
+                    fontSize: '13px', color: '#aaa', fontStyle: 'italic',
+                    padding: '8px 0'
+                }}>
+                    Brak filmów po zastosowaniu filtrów
                 </div>
-                : movies.map(m => (
-                    <MovieRow key={m.movieId} movie={m} color={color} />
-                ))
+                : <>
+                    {visible.map(m => (
+                        <MovieRow key={m.movieId} movie={m} color={color} />
+                    ))}
+                    {hasMore && (
+                        <button onClick={() => setPage(p => p + 1)}
+                            style={{
+                                width: '100%', marginTop: '8px', padding: '6px',
+                                background: '#f0f0f0', border: 'none',
+                                borderRadius: '8px', cursor: 'pointer',
+                                fontSize: '12px', color: '#666'
+                            }}>
+                            ↓ Pokaż więcej ({filtered.length - page * PAGE_SIZE} pozostałych)
+                        </button>
+                    )}
+                </>
             }
         </div>
     )
@@ -87,7 +101,6 @@ function CategoryBlock({ title, tooltip, movies, color, count }) {
 
 export default function UserTasteProfile({ taste, excludedGenres, onToggleGenre }) {
     if (!taste) return null
-
     const { topGenres, lubi, srednie, slabe, stats } = taste
 
     const lubiPct = Math.round(stats.lubiCount / stats.total * 100)
@@ -97,13 +110,13 @@ export default function UserTasteProfile({ taste, excludedGenres, onToggleGenre 
     return (
         <div style={{
             marginTop: '20px', background: '#f8f9fa',
-            border: '1px solid #e0e0e0', borderRadius: '12px', padding: '20px'
+            border: '1px solid #e0e0e0', borderRadius: '12px',
+            padding: '20px'
         }}>
             <h3 style={{ margin: '0 0 16px 0', color: '#333' }}>
                 🎭 Profil filmowy użytkownika
             </h3>
 
-            {/* pasek proporcji */}
             <Tooltip text={`Lubi ${lubiPct}% filmów · Neutralny wobec ${sredniePct}% · Nie lubi ${slabePct}%`}>
                 <div style={{ marginBottom: '16px', cursor: 'help' }}>
                     <div style={{ fontSize: '12px', color: '#888', marginBottom: '6px' }}>
@@ -128,7 +141,6 @@ export default function UserTasteProfile({ taste, excludedGenres, onToggleGenre 
                 </div>
             </Tooltip>
 
-            {/* ulubione gatunki */}
             {topGenres.length > 0 && (
                 <div style={{ marginBottom: '16px' }}>
                     <div style={{ fontSize: '12px', color: '#888', marginBottom: '6px' }}>
@@ -136,8 +148,7 @@ export default function UserTasteProfile({ taste, excludedGenres, onToggleGenre 
                     </div>
                     <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                         {topGenres.map(g => (
-                            <button key={g}
-                                onClick={() => onToggleGenre && onToggleGenre(g)}
+                            <button key={g} onClick={() => onToggleGenre && onToggleGenre(g)}
                                 style={{
                                     padding: '4px 10px',
                                     background: excludedGenres?.includes(g) ? '#fdf0f0' : '#e8f4fd',
@@ -154,31 +165,23 @@ export default function UserTasteProfile({ taste, excludedGenres, onToggleGenre 
                 </div>
             )}
 
-            {/* trzy kolumny */}
             <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
                 <CategoryBlock
-                    title="👍 Lubi"
-                    tooltip="Filmy ocenione 8–10/10 — to właśnie na ich podstawie model generuje rekomendacje"
-                    movies={lubi}
-                    color="#2ecc71"
-                    count={stats.lubiCount}
+                    title="👍 Lubi" color="#2ecc71" movies={lubi} count={stats.lubiCount}
+                    tooltip="Filmy ocenione 8–10/10 — model generuje rekomendacje na ich podstawie"
+                    excludedGenres={excludedGenres} onToggleGenre={onToggleGenre}
                 />
                 <CategoryBlock
-                    title="😐 Neutralne"
-                    tooltip="Filmy ocenione 6/10 — ani dobre ani złe, model traktuje je jako słaby sygnał"
-                    movies={srednie}
-                    color="#f39c12"
-                    count={stats.srednieCount}
+                    title="😐 Neutralne" color="#f39c12" movies={srednie} count={stats.srednieCount}
+                    tooltip="Filmy ocenione 6/10 — słaby sygnał dla modelu"
+                    excludedGenres={excludedGenres} onToggleGenre={onToggleGenre}
                 />
                 <CategoryBlock
-                    title="👎 Nie lubi"
-                    tooltip="Filmy ocenione 2–4/10 — model stara się unikać podobnych tytułów w rekomendacjach"
-                    movies={slabe}
-                    color="#e74c3c"
-                    count={stats.slabeCount}
+                    title="👎 Nie lubi" color="#e74c3c" movies={slabe} count={stats.slabeCount}
+                    tooltip="Filmy ocenione 2–4/10 — model stara się unikać podobnych tytułów"
+                    excludedGenres={excludedGenres} onToggleGenre={onToggleGenre}
                 />
             </div>
         </div>
     )
 }
-

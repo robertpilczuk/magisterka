@@ -25,7 +25,8 @@ export default function App() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [tasteProfile, setTasteProfile] = useState(null)
-  const [excludedGenres, setExcludedGenres] = useState([])
+  const [excludedGenres, setExcludedGenres] = useState([]) // filtr rekomendacji
+  const [excludedProfileGenres, setExcludedProfileGenres] = useState([]) // filtr profilu
 
   // stan dla porównania
   const [compareUserId, setCompareUserId] = useState('')
@@ -145,9 +146,9 @@ export default function App() {
               <UserProfile profile={userProfile} />
               <UserTasteProfile
                 taste={tasteProfile}
-                excludedGenres={excludedGenres}
+                excludedGenres={excludedProfileGenres}
                 onToggleGenre={(g) => {
-                  setExcludedGenres(prev =>
+                  setExcludedProfileGenres(prev =>
                     prev.includes(g) ? prev.filter(x => x !== g) : [...prev, g]
                   )
                 }}
@@ -214,7 +215,7 @@ export default function App() {
                 </div>
               </div>
 
-              <ValidationChart validation={validation} />
+              <ValidationChart validation={validation} excludedGenres={excludedGenres} />
             </>
           )}
         </>

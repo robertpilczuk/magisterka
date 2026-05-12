@@ -1,4 +1,4 @@
-export default function ValidationChart({ validation }) {
+export default function ValidationChart({ validation, excludedGenres = [] }) {
     if (!validation) return null
 
     const { rmse, mae, count, samples } = validation
@@ -62,12 +62,35 @@ export default function ValidationChart({ validation }) {
                             const diff = (s.predicted - s.actual).toFixed(2)
                             const absDiff = Math.abs(diff)
                             const diffColor = absDiff < 0.5 ? '#2a9d2a' : absDiff < 1.0 ? '#e08800' : '#c00'
+                            const isExcluded = excludedGenres.length > 0 &&
+                                s.genres && excludedGenres.some(g => s.genres.includes(g))
+
                             return (
-                                <tr key={i} style={{ borderBottom: '1px solid #eee', background: i % 2 === 0 ? 'white' : '#fafafa' }}>
-                                    <td style={{ padding: '8px 12px' }}>{s.title}</td>
-                                    <td style={{ padding: '8px 12px', textAlign: 'center' }}>⭐ {s.actual}</td>
-                                    <td style={{ padding: '8px 12px', textAlign: 'center' }}>⭐ {s.predicted}</td>
-                                    <td style={{ padding: '8px 12px', textAlign: 'center', color: diffColor, fontWeight: '600' }}>
+                                <tr key={i} style={{
+                                    borderBottom: '1px solid #eee',
+                                    background: isExcluded ? '#f8f8f8' : i % 2 === 0 ? 'white' : '#fafafa',
+                                    opacity: isExcluded ? 0.6 : 1,
+                                    transition: 'opacity 0.2s'
+                                }}>
+                                    <td style={{ padding: '8px 12px', color: isExcluded ? '#aaa' : '#333' }}>
+                                        {s.title}
+                                    </td>
+                                    <td style={{
+                                        padding: '8px 12px', textAlign: 'center',
+                                        color: isExcluded ? '#aaa' : '#333'
+                                    }}>
+                                        ⭐ {s.actual}
+                                    </td>
+                                    <td style={{
+                                        padding: '8px 12px', textAlign: 'center',
+                                        color: isExcluded ? '#aaa' : '#333'
+                                    }}>
+                                        ⭐ {s.predicted}
+                                    </td>
+                                    <td style={{
+                                        padding: '8px 12px', textAlign: 'center',
+                                        color: isExcluded ? '#aaa' : diffColor, fontWeight: '600'
+                                    }}>
                                         {diff > 0 ? '+' : ''}{diff}
                                     </td>
                                 </tr>
