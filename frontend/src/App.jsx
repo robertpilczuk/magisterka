@@ -8,6 +8,7 @@ import SimilarUsersFilter from './components/SimilarUsersFilter'
 import UserComparison from './components/UserComparison'
 import NewUserFlow from './components/NewUserFlow'
 import Spinner from './components/Spinner'
+import UserTasteProfile from './components/UserTasteProfile'
 
 const API = 'http://localhost:8000'
 
@@ -22,6 +23,7 @@ export default function App() {
   const [validation, setValidation] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+  const [tasteProfile, setTasteProfile] = useState(null)
 
   // stan dla porównania
   const [compareUserId, setCompareUserId] = useState('')
@@ -33,17 +35,19 @@ export default function App() {
     setError(null)
     setComparison(null)
     try {
-      const [profile, linear, logistic, valid] = await Promise.all([
+      const [profile, linear, logistic, valid, taste] = await Promise.all([
         axios.get(`${API}/user/${id}`),
         axios.get(`${API}/recommend/${id}`),
         axios.get(`${API}/recommend-logistic/${id}`),
-        axios.get(`${API}/validate/${id}`)
+        axios.get(`${API}/validate/${id}`),
+        axios.get(`${API}/user-taste/${id}`)
       ])
       setUserId(id)
       setUserProfile(profile.data)
       setRecsLinear(linear.data.recommendations)
       setRecsLogistic(logistic.data.recommendations)
       setValidation(valid.data)
+      setTasteProfile(taste.data)
     } catch (err) {
       setError(err.response?.data?.detail || 'Błąd połączenia z API')
     } finally {
@@ -130,6 +134,7 @@ export default function App() {
           {!loading && userProfile && (
             <>
               <UserProfile profile={userProfile} />
+              <UserTasteProfile taste={tasteProfile} />
 
               {/* porównanie użytkowników */}
               <div style={{
