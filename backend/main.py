@@ -116,3 +116,21 @@ def compare_users(userId1: int, userId2: int):
                 status_code=404, detail=f"Użytkownik {uid} nie istnieje"
             )
     return get_user_comparison(userId1, userId2, ratings, movies, users)
+
+
+from predict import (
+    get_recommendations,
+    get_validation,
+    get_recommendations_logistic,
+    get_similar_users,
+    get_new_user_recommendations,
+    get_user_comparison,
+    get_user_taste_profile,
+)
+
+
+@app.get("/user-taste/{userId}")
+def user_taste(userId: int):
+    if userId not in users["userId"].values:
+        raise HTTPException(status_code=404, detail=f"Użytkownik {userId} nie istnieje")
+    return get_user_taste_profile(userId, ratings, movies)

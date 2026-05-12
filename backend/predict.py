@@ -336,3 +336,47 @@ def get_user_comparison(userId1, userId2, ratings, movies, users, top_n=10):
         "common": common,
         "similarityPct": round(len(common_ids) / 20 * 100, 1),
     }
+
+
+def get_user_taste_profile(userId, ratings, movies):
+    """Zwraca filmy użytkownika podzielone na trzy kategorie:
+    lubi (4-5), średnie (3), słabe (1-2)."""
+
+    user_ratings = (
+        ratings[ratings["userId"] == userId]
+        .merge(movies[["movieId", "title", "genres"]], on="movieId")
+        .sort_values("rating", ascending=False)
+    )
+
+    def to_list(df, n=8):
+        return (
+            df[["movieId", "title", "genres", "rating"]]
+            .head(n)
+            .to_dict(orient="records")
+        )
+
+    lubi = user_ratings[user_ratings["rating"] >= 4]
+    srednie = user_ratings[user_ratings["rating"] == 3]
+    slabe = user_ratings[user_ratings["rating"] <= 2]
+
+    # top gatunki
+    all_genres = []
+    for g in lubi["genres"]:
+        all_genres.extend(g.split("|"))
+    from collections import Counter
+
+    top_genres = [g for g, _ in Counter(all_genres).most_common(5)]
+
+    return {
+        "userId": userId,
+        "topGenres": top_genres,
+        "lubi": to_list(lubi),
+        "srednie": to_list(srednie),
+        "slabe": to_list(slabe.sort_values("rating")),
+        "stats": {
+            "lubiCount": len(lubi),
+            "srednieCount": len(srednie),
+            "slabeCount": len(slabe),
+            "total": len(user_ratings),
+        },
+    }
