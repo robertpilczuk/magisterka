@@ -362,3 +362,370 @@ z najczęstszych pułapek w projektach ML.
 
 *Dokumentacja wygenerowana dla backendu FastAPI*
 *Projekt: Wykorzystanie regresji liniowej w procesie predykcyjnym doboru treści audiowizualnych*
+
+
+# Dokumentacja — Backend FastAPI (aktualizacja)
+## Nowe funkcje i endpointy dodane po etapie 3
+
+---
+
+## Przegląd nowych komponentów
+
+Po podstawowej implementacji backend został rozszerzony o cztery nowe funkcje
+w `predict.py` i cztery nowe endpointy w `main.py`:
+
+| Funkcja | Endpoint | Cel |
+|---------|----------|-----|
+| `get_similar_users()` | `GET /similar-users` | Filtr demograficzny użytkowników |
+| `get_new_user_recommendations()` | `POST /recommend-new-user` | Cold start onboarding |
+| `get_user_comparison()` | `GET /compare-users/{id1}/{id2}` | Porównanie dwóch użytkowników |
+| `get_user_taste_profile()` | `GET /user-taste/{userId}` | Profil filmowy (lubi/neutralne/nie lubi) |
+
+---
+
+## Threshold Tuning — optymalny próg klasyfikacji
+
+### Co to jest i dlaczego jest ważne
+
+Domyślny próg decyzyjny regresji logistycznej wynosi 0.5 — model przewiduje
+"polubi" gdy prawdopodobieństwo > 50%. Jest to arbitralna wartość która
+niekoniecznie maksymalizuje jakość klasyfikacji.
+
+**Threshold tuning** to proces wyznaczenia progu który maksymalizuje wybraną
+metrykę — w naszym przypadku **F1-Score** (harmoniczna średnia Precision i Recall).
+
+### Jak to działa
+
+W notebooku `03_model.ipynb` sprawdzamy wszystkie progi od 0.1 do 0.9
+z krokiem 0.01 i dla każdego obliczamy F1-Score:
+
+```python
+thresholds = np.arange(0.1, 0.9, 0.01)
+for t in thresholds:
+    y_pred_t = (y_pred_log_proba >= t).astype(int)
+    f1 = f1_score(y_test_binary, y_pred_t)
+```
+
+Optymalny próg jest zapisywany do pliku:
+
+```json
+{
+  "optimal_threshold": 0.42,
+  "f1_at_optimal": 0.7823,
+  "f1_at_default": 0.7701
+}
+```
+
+### Jak backend używa optymalnego progu
+
+```python
+threshold_path = os.path.join(MODEL_DIR, 'optimal_threshold.json')
+if os.path.exists(threshold_path):
+    with open(threshold_path) as f:
+        threshold_data = json.load(f)
+    optimal_threshold = threshold_data['optimal_threshold']
+else:
+    optimal_threshold = 0.5
+```
+
+Jeśli plik nie istnieje — fallback do 0.5. To zabezpieczenie przed sytuacją
+gdy ktoś uruchamia backend bez wcześniejszego uruchomienia notebooka z threshold tuningiem.
+
+### Znaczenie dla pracy magisterskiej
+
+Threshold tuning to dowód że model logistyczny wymaga kalibracji — jest bardziej
+złożony w użyciu niż regresja liniowa, ale może być dokładniejszy.
+Różnica F1 między progiem domyślnym a optymalnym jest argumentem w Rozdziale III
+przy porównaniu obu modeli.
+
+---
+
+## get_similar_users() — filtr demograficzny
+
+### Cel funkcji
+
+Pozwala użytkownikowi znaleźć innych użytkowników z podobnymi cechami
+demograficznymi. Odpowiada na pytanie: "Kto w bazie jest podobny do mnie?"
+
+### Parametry
+
+```python
+def get_similar_users(gender=None, age=None, occupation=None, limit=20):
+```
+
+Wszystkie parametry są opcjonalne — można filtrować po jednej, dwóch lub
+wszystkich trzech cechach jednocześnie. Brak parametru = dowolna wartość.
+
+### Logika filtrowania
+
+```python
+filtered = users.copy()
+if gender is not None:
+    filtered = filtered[filtered['gender'] == gender]
+if age is not None:
+    filtered = filtered[filtered['age'] == age]
+if occupation is not None:
+    filtered = filtered[filtered['occupation'] == occupation]
+```
+
+Kolejne warunki są nakładane metodą AND — im więcej filtrów, tym mniej wyników.
+
+### Dodawanie statystyk
+
+```python
+user_stats = ratings.groupby('userId')['rating'].agg(['count','mean']).reset_index()
+user_stats.columns = ['userId','ratingsCount','avgRating']
+filtered = filtered.merge(user_stats, on='userId', how='left')
+```
+
+Do każdego znalezionego użytkownika dołączamy statystyki z tabeli `ratings`:
+- `ratingsCount` — ile filmów ocenił (miara aktywności)
+- `avgRating` — jaka jest jego średnia ocen (styl oceniania)
+
+### Sortowanie i limit
+
+```python
+filtered = filtered.sort_values('ratingsCount', ascending=False).head(limit)
+```
+
+Sortujemy malejąco po aktywności — najbardziej aktywni użytkownicy są
+bardziej "wartościowi" do porównania (więcej danych o ich preferencjach).
+
+### Endpoint
+
+```python
+@app.get("/similar-users")
+def similar_users(gender: str = None, age: int = None,
+                  occupation: int = None, limit: int = 20):
+```
+
+Parametry są przekazywane jako **query parameters** w URL:
+```
+/similar-users?gender=M&age=25&occupation=12
+```
+
+Wszystkie opcjonalne — wywołanie `/similar-users` bez parametrów zwraca
+20 najbardziej aktywnych użytkowników z całej bazy.
+
+---
+
+## get_new_user_recommendations() — cold start onboarding
+
+### Problem który rozwiązuje
+
+Model był trenowany na użytkownikach z historią ocen. Nowy użytkownik
+który nie ma żadnych ocen w bazie nie może dostać personalizowanych rekomendacji
+— to tzw. **cold start problem**.
+
+Rozwiązanie: użytkownik ocenia kilka filmów podczas onboardingu →
+system buduje tymczasowy profil → generuje rekomendacje.
+
+### Parametry
+
+```python
+def get_new_user_recommendations(user_ratings_input, age=25, gender='M',
+                                  occupation=4, top_n=10):
+```
+
+- `user_ratings_input` — lista słowników `[{movieId: int, rating: float}]`
+- `age`, `gender`, `occupation` — opcjonalne dane demograficzne (domyślne = typowy student)
+
+### Budowanie tymczasowego profilu
+
+```python
+user_avg = np.mean([r['rating'] for r in user_ratings_input])
+
+user_row = pd.Series({
+    'userId':     -1,        # sztuczne ID — użytkownik nie jest w bazie
+    'gender':     gender,
+    'age':        age,
+    'occupation': occupation,
+    'zip':        '00000'
+})
+```
+
+`userId = -1` to konwencja oznaczająca "nowy użytkownik spoza bazy".
+`user_avg` obliczone z podanych ocen zastępuje historyczną średnią.
+
+### Wynik łączony (combined score)
+
+```python
+unrated['combined_score'] = (
+    (pred_linear / 5.0) * 0.5 + pred_log_proba * 0.5
+)
+```
+
+Nowy użytkownik dostaje trzy listy rekomendacji:
+- **linear** — top 10 według regresji liniowej (przewidywana ocena)
+- **logistic** — top 10 według regresji logistycznej (prawdopodobieństwo)
+- **combined** — top 10 według średniej ważonej obu modeli (50/50)
+
+Wynik łączony jest "najlepszym z obu światów" — łączy precyzję oceny
+liczbowej z pewnością klasyfikacji binarnej.
+
+### Endpoint
+
+```python
+@app.post("/recommend-new-user")
+def recommend_new_user(request: NewUserRequest):
+    if len(request.ratings) < 3:
+        raise HTTPException(status_code=400,
+                            detail="Podaj minimum 3 oceny filmów")
+```
+
+Metoda **POST** (nie GET) bo wysyłamy dane w body requestu.
+Walidacja minimum 3 ocen — mniej nie daje wystarczającego sygnału
+o preferencjach użytkownika.
+
+**Modele Pydantic** dla walidacji danych wejściowych:
+
+```python
+class UserRating(BaseModel):
+    movieId: int
+    rating:  float
+
+class NewUserRequest(BaseModel):
+    ratings:    List[UserRating]
+    age:        Optional[int]  = 25
+    gender:     Optional[str]  = 'M'
+    occupation: Optional[int]  = 4
+```
+
+Pydantic automatycznie waliduje typy danych i zwraca czytelne błędy
+gdy dane wejściowe są niepoprawne.
+
+---
+
+## get_user_comparison() — porównanie dwóch użytkowników
+
+### Cel funkcji
+
+Pokazuje różnice i podobieństwa w rekomendacjach dla dwóch użytkowników.
+Odpowiada na pytanie: "Jak różne są gusta tych dwóch osób?"
+
+### Algorytm
+
+```python
+recs1 = get_recommendations(userId1, ..., top_n=20)
+recs2 = get_recommendations(userId2, ..., top_n=20)
+
+ids1 = {r['movieId'] for r in recs1}
+ids2 = {r['movieId'] for r in recs2}
+
+common_ids = ids1 & ids2          # część wspólna (operator &)
+only1      = ids1 - ids2          # tylko dla użytkownika 1
+only2      = ids2 - ids1          # tylko dla użytkownika 2
+```
+
+Używamy **zbiorów (set)** zamiast list — operacje na zbiorach (`&`, `-`)
+są znacznie szybsze niż pętle dla dużych kolekcji.
+
+### Wskaźnik podobieństwa
+
+```python
+'similarityPct': round(len(common_ids) / 20 * 100, 1)
+```
+
+Prosty wskaźnik: jaki procent z top 20 rekomendacji jest wspólnych.
+- 0% → zupełnie różne gusta
+- 50% → umiarkowane podobieństwo
+- 100% → identyczne gusta (praktycznie niemożliwe)
+
+### Znaczenie dla pracy magisterskiej
+
+Porównanie użytkowników demonstruje że model **różnicuje rekomendacje**
+na podstawie cech użytkownika — nie zwraca tych samych filmów dla wszystkich.
+To dowód że personalizacja działa.
+
+---
+
+## get_user_taste_profile() — profil filmowy
+
+### Cel funkcji
+
+Dzieli wszystkie oceny użytkownika na trzy kategorie:
+- **Lubi** (rating ≥ 4, czyli ≥ 8/10) — filmy które model będzie promować
+- **Neutralne** (rating = 3, czyli 6/10) — słaby sygnał dla modelu
+- **Nie lubi** (rating ≤ 2, czyli ≤ 4/10) — filmy których model będzie unikać
+
+### Limit 50 filmów per kategoria
+
+```python
+def to_list(df, n=50):
+    return df[['movieId', 'title', 'genres', 'rating']]\
+           .head(n).to_dict(orient='records')
+```
+
+50 filmów zamiast 8 — frontend obsługuje paginację więc możemy zwrócić
+więcej danych i pozwolić użytkownikowi przeglądać je stopniowo.
+
+### Top gatunki
+
+```python
+all_genres = []
+for g in lubi['genres']:
+    all_genres.extend(g.split('|'))
+from collections import Counter
+top_genres = [g for g, _ in Counter(all_genres).most_common(5)]
+```
+
+Top 5 gatunków wyznaczanych **tylko z filmów które użytkownik lubi** (rating ≥ 4).
+`Counter.most_common(5)` zwraca 5 najczęściej występujących gatunków.
+
+Te gatunki są wyświetlane jako klikalne tagi w UI — użytkownik może
+je wykluczyć z rekomendacji jednym kliknięciem.
+
+### Statystyki proporcji
+
+```python
+'stats': {
+    'lubiCount':    len(lubi),
+    'srednieCount': len(srednie),
+    'slabeCount':   len(slabe),
+    'total':        len(user_ratings)
+}
+```
+
+Frontend oblicza z tych liczb procenty i rysuje pasek proporcji
+(zielony/pomarańczowy/czerwony). Pokazuje "typ widza" w kontekście
+całej historii ocen.
+
+---
+
+## Architektura danych — przepływ przez nowe endpointy
+
+```
+Frontend                    Backend                      Dane
+--------                    -------                      ----
+SimilarUsersFilter
+  GET /similar-users   →   get_similar_users()    →   users.dat
+  ?gender=M&age=25          filtruj demographics        ratings.dat (statystyki)
+                            sortuj po aktywności
+                        ←   [{userId, gender, age, ...}]
+
+NewUserFlow
+  POST /recommend-new-user → get_new_user_recommendations()
+  {ratings: [...],           buduj tymczasowy profil
+   age, gender, occ}         build_feature_vector() dla każdego filmu
+                             scaler.transform() + lr.predict()
+                             log_reg.predict_proba()
+                             combined_score = 0.5*linear + 0.5*logistic
+                         ←  {linear: [...], logistic: [...], combined: [...]}
+
+UserComparison
+  GET /compare-users/1/2 →  get_user_comparison()
+                             get_recommendations(1) + get_recommendations(2)
+                             ids1 & ids2 (część wspólna)
+                         ←  {user1, user2, common, onlyForUser1, onlyForUser2}
+
+UserTasteProfile
+  GET /user-taste/1     →   get_user_taste_profile()
+                             filtruj rating >= 4 / == 3 / <= 2
+                             top 5 gatunków z ulubionych
+                         ←  {lubi: [...], srednie: [...], slabe: [...], topGenres}
+```
+
+---
+
+*Dokumentacja zaktualizowana po rozbudowie backendu*
+*Projekt: Wykorzystanie regresji liniowej w procesie predykcyjnym doboru treści audiowizualnych*

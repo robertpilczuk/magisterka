@@ -332,3 +332,484 @@ RecommendationCard wyświetla wyniki obu modeli obok siebie
 
 *Dokumentacja wygenerowana dla frontendu React*
 *Projekt: Wykorzystanie regresji liniowej w procesie predykcyjnym doboru treści audiowizualnych*
+
+
+# Dokumentacja — Frontend React (aktualizacja)
+## Nowe komponenty i funkcje dodane po etapie 5
+
+---
+
+## Przegląd nowych komponentów
+
+| Komponent | Plik | Cel |
+|-----------|------|-----|
+| `Spinner` | `Spinner.jsx` | Animowany wskaźnik ładowania |
+| `Tooltip` | `Tooltip.jsx` | Podpowiedź przy najechaniu myszką |
+| `GenreFilter` | `GenreFilter.jsx` | Filtr gatunków dla rekomendacji |
+| `SimilarUsersFilter` | `SimilarUsersFilter.jsx` | Wyszukiwanie podobnych użytkowników |
+| `UserComparison` | `UserComparison.jsx` | Porównanie dwóch użytkowników |
+| `UserTasteProfile` | `UserTasteProfile.jsx` | Profil filmowy (lubi/neutralne/nie lubi) |
+| `NewUserFlow` | `NewUserFlow.jsx` | Zakładka "Moje rekomendacje" — onboarding |
+| `utils.js` | `utils.js` | Wspólna funkcja `getRatingStyle()` |
+
+---
+
+## utils.js — wspólna logika
+
+### Problem który rozwiązuje
+
+Funkcja `getRatingStyle()` była zduplikowana w `UserProfile.jsx`
+i `SimilarUsersFilter.jsx`. Zmiana w jednym miejscu nie propagowała się
+automatycznie do drugiego — co prowadziło do niespójności (błąd który faktycznie wystąpił).
+
+### Zasada DRY
+
+**DRY (Don't Repeat Yourself)** — fundamentalna zasada programowania.
+Każda logika powinna istnieć w jednym miejscu. Wyciągnięcie funkcji
+do wspólnego pliku eliminuje duplikację.
+
+```js
+// utils.js
+export function getRatingStyle(avg) {
+  const score = Math.round(avg * 2)  // konwersja skali 1-5 na 0-10
+  if (score <= 2)  return { text: 'Krytyk',       desc: '...', color: '#c0392b' }
+  // ...
+}
+```
+
+### Konwersja skali 1–5 na 0–10
+
+```js
+const score = Math.round(avg * 2)
+```
+
+MovieLens używa skali 1–5. Mnożymy przez 2 i zaokrąglamy żeby uzyskać
+intuicyjną skalę 0–10. Przykład: średnia 3.8 → score = 8/10.
+
+### Typy widzów i ich znaczenie
+
+| Score | Typ | Opis |
+|-------|-----|------|
+| 0–2 | Krytyk | Prawie zawsze niezadowolony |
+| 3–4 | Sceptyk | Trudno go zachwycić |
+| 5 | Wybredny widz | Chwali tylko naprawdę dobre filmy |
+| 6 | Typowy widz | Ocenia podobnie jak większość |
+| 7 | Życzliwy widz | Łatwo go zadowolić |
+| 8 | Optymista | Rzadko rozczarowany |
+| 9 | Miłośnik kina | Kocha filmy |
+| 10 | Entuzjasta | Zachwycony niemal każdym filmem |
+
+8 kategorii zamiast 3 (wymagający/przeciętny/łagodny) daje bardziej
+zniuansowany obraz stylu oceniania użytkownika.
+
+---
+
+## Spinner.jsx — animowany wskaźnik ładowania
+
+### Dlaczego spinner zamiast tekstu "⏳ Ładowanie..."?
+
+Animacja daje użytkownikowi wizualny feedback że coś się dzieje —
+statyczny tekst lub emoji jest mniej intuicyjny. Spinner to
+**konwencja UX** rozpoznawalna przez wszystkich użytkowników.
+
+### Implementacja CSS animation
+
+```jsx
+<span style={{
+  border: '3px solid #e0e0e0',
+  borderTop: `3px solid ${color}`,
+  borderRadius: '50%',
+  animation: 'spin 0.8s linear infinite'
+}}>
+  <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+</span>
+```
+
+Trick z `borderTop` innego koloru niż reszta `border` tworzy efekt
+"obracającego się łuku". `@keyframes spin` definiuje animację rotacji
+360° w czasie 0.8 sekundy, powtarzaną w nieskończoność (`infinite`).
+
+### Parametry
+
+```jsx
+<Spinner size={24} color="#4a90d9" />
+```
+
+`size` i `color` jako propsy — komponent jest reużywalny w różnych
+kontekstach (mały spinner w przycisku, duży spinner na stronie).
+
+---
+
+## Tooltip.jsx — podpowiedź kontekstowa
+
+### Cel
+
+Pokazuje dodatkowe informacje gdy użytkownik najedzie myszką na element.
+Używany dla typów widzów ("Krytyk", "Entuzjasta") i kategorii profilu filmowego.
+
+### Pozycjonowanie względem kursora
+
+```jsx
+const [pos, setPos] = useState({ x: 0, y: 0 })
+
+function handleMove(e) {
+  setPos({ x: e.clientX + 12, y: e.clientY + 12 })
+}
+```
+
+`e.clientX/Y` to pozycja kursora w oknie przeglądarki.
+`+ 12` przesuwa tooltip 12px w prawo i w dół od kursora — żeby
+nie zasłaniał tekstu na który użytkownik patrzy.
+
+### `position: fixed` dla tooltipa
+
+```jsx
+<div style={{ position: 'fixed', left: pos.x, top: pos.y, zIndex: 9999 }}>
+```
+
+`fixed` pozycjonuje element względem okna przeglądarki (nie rodzica).
+`zIndex: 9999` gwarantuje że tooltip jest zawsze na wierzchu innych elementów.
+`pointerEvents: 'none'` sprawia że tooltip nie blokuje kliknięć.
+
+### Sygnalizacja interaktywności
+
+```jsx
+<span style={{ borderBottom: `1px dashed ${color}` }}>
+  {ratingInfo.text}
+</span>
+```
+
+Przerywana linia pod tekstem to konwencja UX oznaczająca "najedź myszką
+po więcej informacji" — podobna do przypisów w dokumentach.
+
+---
+
+## GenreFilter.jsx — filtr gatunków rekomendacji
+
+### Logika wykluczania vs włączania
+
+```jsx
+function toggle(en) {
+  if (selected.includes(en)) {
+    onChange(selected.filter(g => g !== en))  // usuń z wykluczonych
+  } else {
+    onChange([...selected, en])               // dodaj do wykluczonych
+  }
+}
+```
+
+Stan `selected` przechowuje listę **wykluczonych** gatunków (nie włączonych).
+Pusta lista = pokaż wszystko. To intuicyjne podejście — domyślnie wszystko
+jest widoczne, użytkownik decyduje co ukryć.
+
+### Wizualizacja stanu
+
+```jsx
+background: excluded ? '#fdf0f0' : '#e8f4fd',
+color:      excluded ? '#e74c3c' : '#4a90d9',
+textDecoration: excluded ? 'line-through' : 'none'
+```
+
+Trzy równoczesne zmiany wizualne dla wykluczonego gatunku:
+- Czerwone tło i kolor (ostrzeżenie)
+- Przekreślony tekst (usunięty)
+- Prefix "✕" (wyraźna akcja)
+
+### Przyciski "Pokaż wszystkie" / "Ukryj wszystkie"
+
+```jsx
+function selectAll()  { onChange([]) }           // pusta lista = nic nie wykluczone
+function selectNone() { onChange(GENRES.map(g => g.en)) }  // wszystkie wykluczone
+```
+
+Szybkie akcje globalne zamiast klikania każdego gatunku osobno.
+
+### Filtrowanie w App.jsx
+
+```jsx
+function filterByGenre(recs) {
+  if (excludedGenres.length === 0) return recs
+  return recs.filter(rec =>
+    !excludedGenres.some(g => rec.genres.includes(g))
+  )
+}
+```
+
+`Array.some()` zwraca `true` jeśli którykolwiek wykluczony gatunek
+pojawia się w gatunkach filmu. `!` neguje — zachowujemy filmy które
+NIE zawierają żadnego wykluczonego gatunku.
+
+---
+
+## Dwa niezależne filtry gatunków
+
+### Problem
+
+Początkowo jeden filtr gatunków wpływał zarówno na rekomendacje jak
+i na profil filmowy użytkownika. To było niepożądane — filtr rekomendacji
+powinien działać niezależnie od filtrowania w profilu.
+
+### Rozwiązanie — dwa stany
+
+```jsx
+const [excludedGenres, setExcludedGenres]               = useState([]) // rekomendacje
+const [excludedProfileGenres, setExcludedProfileGenres] = useState([]) // profil filmowy
+```
+
+Dwa osobne stany React przechowują dwie niezależne listy wykluczeń.
+
+**`excludedGenres`** — przekazywany do:
+- `<GenreFilter>` — widoczny filtr z przyciskami gatunków
+- `filterByGenre()` — filtruje karty rekomendacji
+- `<ValidationChart>` — wyszarza wiersze w tabeli walidacji
+
+**`excludedProfileGenres`** — przekazywany do:
+- `<UserTasteProfile>` — filtruje filmy w sekcjach lubi/neutralne/nie lubi
+- Klikalne tagi ulubionych gatunków w profilu
+
+### Wyszarzanie w tabeli walidacji
+
+```jsx
+const isExcluded = excludedGenres.length > 0 &&
+                   s.genres && excludedGenres.some(g => s.genres.includes(g))
+
+<tr style={{ opacity: isExcluded ? 0.6 : 1 }}>
+```
+
+Wiersze z wykluczonymi gatunkami są wyszarzone (opacity 0.6) ale
+nie usunięte — tabela walidacji pokazuje dane naukowe które nie powinny
+znikać. Wyszarzenie sygnalizuje "te dane są poza Twoim filtrem".
+
+---
+
+## SimilarUsersFilter.jsx — wyszukiwanie podobnych użytkowników
+
+### Cel UX
+
+Użytkownik który nie zna swojego userId może znaleźć kogoś podobnego
+demograficznie i zobaczyć jego rekomendacje jako punkt startowy.
+To też sposób na eksplorację bazy — "co oglądają programiści w wieku 25-34?"
+
+### Trzy dropdowny
+
+Płeć, wiek i zawód to trzy zmienne demograficzne dostępne w MovieLens 1M.
+Wszystkie opcjonalne — można szukać tylko po zawodzie bez podawania płci i wieku.
+
+### Karty użytkowników z informacją o stylu oceniania
+
+```jsx
+const label  = getRatingStyle(u.avgRating)
+const score10 = Math.round(u.avgRating * 2)
+```
+
+Każda karta pokazuje:
+- ID użytkownika
+- Płeć + przedział wiekowy + zawód
+- Liczbę ocen (miara aktywności)
+- Styl oceniania: "7/10 — Życzliwy widz" z tooltipem i paskiem
+
+Pasek wizualizuje styl oceniania — szybki rzut oka pokazuje czy
+użytkownik jest wymagający czy łagodny bez czytania liczb.
+
+### Hover effect na kartach
+
+```jsx
+onMouseEnter={e => {
+  e.currentTarget.style.borderColor = '#4a90d9'
+  e.currentTarget.style.boxShadow = '0 2px 8px rgba(74,144,217,0.15)'
+}}
+onMouseLeave={e => {
+  e.currentTarget.style.borderColor = '#ddd'
+  e.currentTarget.style.boxShadow = 'none'
+}}
+```
+
+`e.currentTarget` (nie `e.target`) — wskazuje element na którym jest
+event handler, nie element który faktycznie otrzymał zdarzenie (może być
+dziecko). To ważna różnica przy zagnieżdżonych elementach.
+
+---
+
+## UserComparison.jsx — porównanie użytkowników
+
+### Trzy kolumny
+
+UI dzieli rekomendacje na trzy grupy:
+- **Tylko dla użytkownika 1** (niebieski) — unikalne preferencje
+- **Wspólne** (zielony) — filmy które obu modele rekomendują obu użytkownikom
+- **Tylko dla użytkownika 2** (pomarańczowy) — unikalne preferencje
+
+Środkowa kolumna "Wspólne" jest najważniejsza naukowo — pokazuje filmy
+które model jest pewny że spodobają się obu użytkownikom niezależnie
+od ich różnic demograficznych.
+
+### Wskaźnik podobieństwa
+
+```jsx
+const similarityColor = similarityPct >= 50 ? '#2ecc71'
+                      : similarityPct >= 25 ? '#e08800'
+                      : '#e87040'
+```
+
+Kolor wskaźnika zmienia się zależnie od podobieństwa:
+- Zielony (≥50%) — bardzo podobne gusta
+- Pomarańczowy (25–50%) — umiarkowane podobieństwo
+- Czerwony (<25%) — różne gusta
+
+---
+
+## UserTasteProfile.jsx — profil filmowy
+
+### Paginacja w CategoryBlock
+
+```jsx
+const PAGE_SIZE = 8
+const visible   = filtered.slice(0, page * PAGE_SIZE)
+const hasMore   = page * PAGE_SIZE < filtered.length
+```
+
+Początkowo pokazujemy 8 filmów. Przycisk "Pokaż więcej" zwiększa `page`
+o 1 — `slice(0, page * PAGE_SIZE)` pokazuje kolejne 8.
+
+Zamiast paginacji "strona 1/3" użyto **infinite scroll-like** przycisku —
+bardziej naturalne dla list filmów.
+
+### Licznik "filtered/total"
+
+```jsx
+<span style={{ fontSize: '12px', fontWeight: 'normal', color: '#888' }}>
+  {filtered.length}/{count} filmów
+</span>
+```
+
+Pokazuje ile filmów pozostało po filtrowaniu vs ile jest łącznie.
+Np. "12/45 filmów" — użytkownik widzi że filtr usunął 33 pozycje.
+
+### Pasek proporcji ocen
+
+```jsx
+<div style={{ display: 'flex', height: '12px', borderRadius: '6px' }}>
+  <div style={{ width: `${lubiPct}%`,    background: '#2ecc71' }} />
+  <div style={{ width: `${sredniePct}%`, background: '#f39c12' }} />
+  <div style={{ width: `${slabePct}%`,   background: '#e74c3c' }} />
+</div>
+```
+
+Trzy divy obok siebie w jednym kontenerze flex tworzą segmentowany pasek.
+Szerokości (w procentach) sumują się do 100% bo:
+`lubiPct + sredniePct + slabePct = Math.round(lubi/total*100) + ... ≈ 100`
+
+---
+
+## NewUserFlow.jsx — zakładka "Moje rekomendacje"
+
+### Trzyetapowy flow
+
+```
+Krok 1: Profil demograficzny (opcjonalny)
+     ↓
+Krok 2: Oceń filmy (minimum 3)
+     ↓
+Krok 3: Wyniki — linear / logistic / combined
+```
+
+Stan `step` (1/2/3) kontroluje który ekran jest widoczny:
+
+```jsx
+const [step, setStep] = useState(1)
+```
+
+### Lista sample movies
+
+20 starannie wybranych filmów reprezentujących różne gatunki i epoki.
+Kryteria wyboru:
+- Rozpoznawalność (większość ludzi je zna lub o nich słyszała)
+- Różnorodność gatunkowa (akcja, dramat, sci-fi, komedia, thriller)
+- Różnorodność czasowa (filmy z lat 70–2000)
+- Obecność w bazie MovieLens 1M (movieId musi istnieć w zbiorze)
+
+### Ocenianie filmami — przyciski 1–5
+
+```jsx
+{[1,2,3,4,5].map(star => (
+  <button key={star} onClick={() => setRating(movie.movieId, star)}
+    style={{
+      background: ratings[movie.movieId] >= star ? '#4a90d9' : '#f0f0f0',
+    }}>
+    {star}
+  </button>
+))}
+```
+
+Przyciski 1–5 zamiast gwiazdek — bardziej precyzyjne i jednoznaczne.
+`ratings[movie.movieId] >= star` koloruje wszystkie przyciski ≤ aktualnej oceny
+tworząc efekt "wypełnienia" jak w klasycznych systemach gwiazdkowych.
+
+### Trzy panele wyników z przełącznikiem
+
+```jsx
+const [activePanel, setActivePanel] = useState('linear')
+```
+
+Przełącznik między trzema widokami: linear / logistic / combined.
+Zamiast pokazywać wszystkie trzy listy jednocześnie (za dużo informacji)
+użytkownik świadomie wybiera który model chce zobaczyć.
+
+Panel "combined" jest opisany jako "50% regresja liniowa + 50% regresja logistyczna"
+— transparentność dla użytkownika który nie zna szczegółów implementacji.
+
+### Wyświetlanie optymalnego progu
+
+```jsx
+<div>
+  <div style={{ fontSize: '12px', color: '#888' }}>Optymalny próg</div>
+  <div>🎯 {results.optimal_threshold}</div>
+</div>
+```
+
+Optymalny próg jest pokazywany w podsumowaniu profilu. Dla laika
+można to opisać jako "próg pewności modelu" — film zostanie polecony
+tylko gdy model jest przynajmniej X% pewny że się spodoba.
+
+---
+
+## Architektura stanu w App.jsx
+
+Po rozbudowie App.jsx zarządza następującymi stanami:
+
+```jsx
+// zakładki
+const [activeTab, setActiveTab]               = useState('existing')
+
+// dane użytkownika z bazy
+const [userId, setUserId]                     = useState(null)
+const [userProfile, setUserProfile]           = useState(null)
+const [recsLinear, setRecsLinear]             = useState([])
+const [recsLogistic, setRecsLogistic]         = useState([])
+const [validation, setValidation]             = useState(null)
+const [tasteProfile, setTasteProfile]         = useState(null)
+const [loading, setLoading]                   = useState(false)
+const [error, setError]                       = useState(null)
+
+// porównanie użytkowników
+const [compareUserId, setCompareUserId]       = useState('')
+const [comparison, setComparison]             = useState(null)
+const [compareLoading, setCompareLoading]     = useState(false)
+
+// dwa niezależne filtry gatunków
+const [excludedGenres, setExcludedGenres]               = useState([])
+const [excludedProfileGenres, setExcludedProfileGenres] = useState([])
+```
+
+**Dlaczego wszystko w App.jsx a nie w osobnych komponentach?**
+
+Stany które są współdzielone między komponentami (np. `excludedGenres`
+używany przez `GenreFilter`, `ValidationChart` i panele rekomendacji)
+muszą żyć w wspólnym przodku — to **lifting state up**, fundamentalny
+pattern React. Lokalne stany (np. `page` w `CategoryBlock`) żyją tam
+gdzie są potrzebne.
+
+---
+
+*Dokumentacja zaktualizowana po rozbudowie frontendu*
+*Projekt: Wykorzystanie regresji liniowej w procesie predykcyjnym doboru treści audiowizualnych*
