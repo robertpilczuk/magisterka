@@ -10,6 +10,7 @@ import NewUserFlow from './components/NewUserFlow'
 import Spinner from './components/Spinner'
 import UserTasteProfile from './components/UserTasteProfile'
 import GenreFilter from './components/GenreFilter'
+import DeepAnalysisFlow from './components/DeepAnalysisFlow'
 
 const API = 'http://localhost:8000'
 
@@ -111,6 +112,9 @@ export default function App() {
         </button>
         <button style={tabStyle('new')} onClick={() => setActiveTab('new')}>
           ✨ Moje rekomendacje
+        </button>
+        <button style={tabStyle('deep')} onClick={() => setActiveTab('deep')}>
+          🔬 Pogłębiona analiza
         </button>
       </div>
 
@@ -223,6 +227,8 @@ export default function App() {
 
       {/* zakładka 2 — nowy użytkownik */}
       {activeTab === 'new' && <NewUserFlow API={API} />}
+      {/* zakładka 3 — pogłębiona analiza */}
+      {activeTab === 'deep' && <DeepAnalysisFlow API={API} />}
     </div>
   )
 }
