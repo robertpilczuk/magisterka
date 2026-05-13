@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useLang } from './LangContext'
 import axios from 'axios'
+import LandingPage from './components/LandingPage'
 import SearchBar from './components/SearchBar'
 import UserProfile from './components/UserProfile'
 import RecommendationCard from './components/RecommendationCard'
@@ -17,6 +18,7 @@ const API = 'http://localhost:8000'
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('existing')
+  const [contentType, setContentType] = useState(null)
 
   // stan dla zakładki "użytkownik z bazy"
   const [userId, setUserId] = useState(null)
@@ -98,12 +100,24 @@ export default function App() {
     )
   }
 
+  if (!contentType) {
+    return <LandingPage onSelect={setContentType} />
+  }
   return (
     <div style={{
       maxWidth: '1200px', margin: '0 auto', padding: '24px',
       fontFamily: 'sans-serif'
     }}>
       {/* przełącznik języka */}
+      <button onClick={() => setContentType(null)} style={{
+        position: 'fixed', top: '16px', left: '16px', zIndex: 1000,
+        padding: '6px 14px', borderRadius: '20px',
+        border: '1px solid #ddd', background: 'white',
+        cursor: 'pointer', fontSize: '13px', fontWeight: '600',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+      }}>
+        {t('landing.back')}
+      </button>
       <div style={{ position: 'fixed', top: '16px', right: '16px', zIndex: 1000 }}>
         <button onClick={toggleLang} style={{
           padding: '6px 14px', borderRadius: '20px',

@@ -264,6 +264,26 @@ const translations = {
                 originality: 'Świeże pomysły, unikatowy styl, klimat',
             },
         },
+        //landing page
+        landing: {
+            hero_title: 'System predykcji treści',
+            hero_subtitle: 'Praca magisterska — Wykorzystanie regresji liniowej w procesie predykcyjnym doboru treści audiowizualnych',
+            hero_desc: 'Wybierz typ treści który chcesz poddać predykcji. System użyje modelu regresji liniowej i logistycznej do wygenerowania spersonalizowanych rekomendacji.',
+            choose: 'Co chcesz dziś odkryć?',
+            movies: 'Filmy',
+            movies_desc: 'Rekomendacje filmowe na podstawie datasetu MovieLens 1M — ponad milion ocen od 6040 użytkowników.',
+            series: 'Seriale',
+            series_desc: 'Rekomendacje seriali telewizyjnych. Wkrótce — dataset w przygotowaniu.',
+            books: 'Książki',
+            books_desc: 'Rekomendacje książek na podstawie datasetu Book-Crossing — 270 000 użytkowników.',
+            coming_soon: 'Wkrótce',
+            available: 'Dostępne',
+            about_title: 'O projekcie',
+            about_desc: 'Aplikacja powstała jako część pracy magisterskiej na kierunku Informatyka (specjalność Programowanie i Analiza Danych) na uczelni WSEI w Lublinie. Celem projektu jest porównanie skuteczności regresji liniowej i logistycznej w zadaniu predykcji preferencji użytkowników.',
+            about_stack: 'Stack technologiczny',
+            about_dataset: 'Dataset',
+            back: '← Wróć do wyboru',
+        },
     },
 
     EN: {
@@ -512,6 +532,26 @@ const translations = {
                 originality: 'Fresh ideas, unique style, atmosphere',
             },
         },
+        landing: {
+            hero_title: 'Content Prediction System',
+            hero_subtitle: 'Master\'s Thesis — Using Linear Regression in Predictive Selection of Audiovisual Content',
+            hero_desc: 'Choose the type of content you want to predict. The system uses linear and logistic regression models to generate personalized recommendations.',
+            choose: 'What do you want to discover today?',
+            movies: 'Movies',
+            movies_desc: 'Movie recommendations based on the MovieLens 1M dataset — over one million ratings from 6,040 users.',
+            series: 'TV Series',
+            series_desc: 'TV series recommendations. Coming soon — dataset in preparation.',
+            books: 'Books',
+            books_desc: 'Book recommendations based on the Book-Crossing dataset — 270,000 users.',
+            coming_soon: 'Coming soon',
+            available: 'Available',
+            about_title: 'About the project',
+            about_desc: 'This application was created as part of a master\'s thesis in Computer Science (Programming and Data Analysis) at WSEI University in Lublin. The goal is to compare the effectiveness of linear and logistic regression in predicting user preferences.',
+            about_stack: 'Tech stack',
+            about_dataset: 'Dataset',
+            back: '← Back to selection',
+        },
+
     },
 }
 
