@@ -134,3 +134,89 @@ def user_taste(userId: int):
     if userId not in users["userId"].values:
         raise HTTPException(status_code=404, detail=f"Użytkownik {userId} nie istnieje")
     return get_user_taste_profile(userId, ratings, movies)
+
+
+# ─── BOOKS ───────────────────────────────────────────────────────────────────
+from data_loader_books import load_books_data
+from predict_books import (
+    get_book_recommendations,
+    get_book_recommendations_logistic,
+    get_book_validation,
+    get_new_user_book_recommendations,
+)
+from pydantic import BaseModel
+from typing import List, Optional
+
+print("Wczytywanie danych książkowych...")
+books_ratings, books_books, books_users = load_books_data()
+
+
+class BookUserRating(BaseModel):
+    isbn: str
+    rating: float
+
+
+class NewBookUserRequest(BaseModel):
+    ratings: List[BookUserRating]
+    age: Optional[int] = 25
+
+
+@app.get("/books/recommend/{userId}")
+def books_recommend(userId: int, top_n: int = 10):
+    if userId not in books_users["userId"].values:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Użytkownik {userId} nie istnieje w datasecie książek",
+        )
+    results = get_book_recommendations(
+        userId, books_ratings, books_books, books_users, top_n
+    )
+    return {"userId": userId, "recommendations": results}
+
+
+@app.get("/books/recommend-logistic/{userId}")
+def books_recommend_logistic(userId: int, top_n: int = 10):
+    if userId not in books_users["userId"].values:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Użytkownik {userId} nie istnieje w datasecie książek",
+        )
+    results = get_book_recommendations_logistic(
+        userId, books_ratings, books_books, books_users, top_n
+    )
+    return {"userId": userId, "recommendations": results}
+
+
+@app.get("/books/validate/{userId}")
+def books_validate(userId: int):
+    if userId not in books_users["userId"].values:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Użytkownik {userId} nie istnieje w datasecie książek",
+        )
+    return get_book_validation(userId, books_ratings, books_books, books_users)
+
+
+@app.get("/books/user/{userId}")
+def books_user_info(userId: int):
+    if userId not in books_users["userId"].values:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Użytkownik {userId} nie istnieje w datasecie książek",
+        )
+    user = books_users[books_users["userId"] == userId].iloc[0]
+    user_ratings = books_ratings[books_ratings["userId"] == userId]
+    return {
+        "userId": userId,
+        "age": round(float(user["age"])),
+        "ratingsCount": len(user_ratings),
+        "avgRating": round(float(user_ratings["rating"].mean()), 2),
+    }
+
+
+@app.post("/books/recommend-new-user")
+def books_recommend_new_user(request: NewBookUserRequest):
+    if len(request.ratings) < 3:
+        raise HTTPException(status_code=400, detail="Podaj minimum 3 oceny książek")
+    ratings_input = [{"isbn": r.isbn, "rating": r.rating} for r in request.ratings]
+    return get_new_user_book_recommendations(ratings_input, request.age)
