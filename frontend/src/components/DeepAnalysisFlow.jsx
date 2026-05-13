@@ -3,50 +3,21 @@ import axios from 'axios'
 import RecommendationCard from './RecommendationCard'
 import Spinner from './Spinner'
 import GenreFilter from './GenreFilter'
-
-const CRITERIA = [
-    { key: 'plot', label: 'Fabuła', desc: 'Historia, scenariusz, zwroty akcji', emoji: '📖' },
-    { key: 'acting', label: 'Aktorstwo', desc: 'Gra aktorów, obsada, chemia na ekranie', emoji: '🎭' },
-    { key: 'visuals', label: 'Efekty wizualne', desc: 'CGI, zdjęcia, scenografia, kostiumy', emoji: '🎨' },
-    { key: 'music', label: 'Muzyka', desc: 'Ścieżka dźwiękowa, muzyka, dźwięk', emoji: '🎵' },
-    { key: 'emotions', label: 'Emocje', desc: 'Wzruszenie, napięcie, humor, strach', emoji: '❤️' },
-    { key: 'originality', label: 'Oryginalność', desc: 'Świeże pomysły, unikatowy styl, klimat', emoji: '✨' },
-]
+import { useLang } from '../LangContext'
 
 const SAMPLE_MOVIES = [
-    { movieId: 318, title: 'Skazani na Shawshank (1994)', genres: 'Drama' },
+    { movieId: 318, title: 'Shawshank Redemption, The (1994)', genres: 'Drama' },
     { movieId: 296, title: 'Pulp Fiction (1994)', genres: 'Crime|Thriller' },
-    { movieId: 2571, title: 'Matrix (1999)', genres: 'Action|Sci-Fi|Thriller' },
-    { movieId: 260, title: 'Gwiezdne Wojny IV (1977)', genres: 'Action|Adventure|Sci-Fi' },
-    { movieId: 527, title: 'Lista Schindlera (1993)', genres: 'Drama|War' },
-    { movieId: 593, title: 'Milczenie owiec (1991)', genres: 'Drama|Thriller' },
+    { movieId: 2571, title: 'Matrix, The (1999)', genres: 'Action|Sci-Fi|Thriller' },
+    { movieId: 260, title: 'Star Wars: Episode IV (1977)', genres: 'Action|Adventure|Sci-Fi' },
+    { movieId: 527, title: "Schindler's List (1993)", genres: 'Drama|War' },
+    { movieId: 593, title: 'Silence of the Lambs, The (1991)', genres: 'Drama|Thriller' },
     { movieId: 356, title: 'Forrest Gump (1994)', genres: 'Comedy|Drama|Romance' },
     { movieId: 589, title: 'Terminator 2 (1991)', genres: 'Action|Sci-Fi|Thriller' },
-    { movieId: 1198, title: 'Poszukiwacze zaginionej arki (1981)', genres: 'Action|Adventure' },
+    { movieId: 1198, title: 'Raiders of the Lost Ark (1981)', genres: 'Action|Adventure' },
     { movieId: 3578, title: 'Gladiator (2000)', genres: 'Action|Drama' },
-    { movieId: 1196, title: 'Gwiezdne Wojny V (1980)', genres: 'Action|Adventure|Sci-Fi' },
+    { movieId: 1196, title: 'Star Wars: Episode V (1980)', genres: 'Action|Adventure|Sci-Fi' },
     { movieId: 110, title: 'Braveheart (1995)', genres: 'Action|Drama|War' },
-]
-
-const AGE_OPTIONS = [
-    { value: 1, label: 'Poniżej 18' }, { value: 18, label: '18–24' },
-    { value: 25, label: '25–34' }, { value: 35, label: '35–44' },
-    { value: 45, label: '45–49' }, { value: 50, label: '50–55' },
-    { value: 56, label: '56+' }
-]
-
-const OCC_OPTIONS = [
-    { value: 0, label: 'Inne' }, { value: 1, label: 'Naukowiec/wykładowca' },
-    { value: 2, label: 'Artysta' }, { value: 3, label: 'Pracownik biurowy' },
-    { value: 4, label: 'Student' }, { value: 5, label: 'Obsługa klienta' },
-    { value: 6, label: 'Lekarz' }, { value: 7, label: 'Menedżer' },
-    { value: 8, label: 'Rolnik' }, { value: 9, label: 'Gospodarz domowy' },
-    { value: 10, label: 'Uczeń' }, { value: 11, label: 'Prawnik' },
-    { value: 12, label: 'Programista' }, { value: 13, label: 'Emeryt' },
-    { value: 14, label: 'Sprzedaż' }, { value: 15, label: 'Naukowiec' },
-    { value: 16, label: 'Samozatrudniony' }, { value: 17, label: 'Technik/inżynier' },
-    { value: 18, label: 'Rzemieślnik' }, { value: 19, label: 'Bezrobotny' },
-    { value: 20, label: 'Pisarz' }
 ]
 
 function WeightSlider({ criterion, value, onChange }) {
@@ -59,14 +30,9 @@ function WeightSlider({ criterion, value, onChange }) {
                 <div>
                     <span style={{ fontSize: '18px', marginRight: '8px' }}>{criterion.emoji}</span>
                     <span style={{ fontWeight: '600', color: '#333' }}>{criterion.label}</span>
-                    <span style={{ fontSize: '12px', color: '#888', marginLeft: '8px' }}>
-                        {criterion.desc}
-                    </span>
+                    <span style={{ fontSize: '12px', color: '#888', marginLeft: '8px' }}>{criterion.desc}</span>
                 </div>
-                <span style={{
-                    fontWeight: '700', color: '#4a90d9',
-                    minWidth: '32px', textAlign: 'right'
-                }}>
+                <span style={{ fontWeight: '700', color: '#4a90d9', minWidth: '32px', textAlign: 'right' }}>
                     {value}%
                 </span>
             </div>
@@ -79,33 +45,22 @@ function WeightSlider({ criterion, value, onChange }) {
     )
 }
 
-function MovieRatingDeep({ movie, criteriaRatings, onRate }) {
+function MovieRatingDeep({ movie, criteriaRatings, onRate, criteria }) {
     const hasAny = Object.values(criteriaRatings).some(v => v > 0)
-
     return (
         <div style={{
             background: hasAny ? '#f0f7ff' : 'white',
             border: `1px solid ${hasAny ? '#4a90d9' : '#e0e0e0'}`,
             borderRadius: '10px', padding: '14px', marginBottom: '10px'
         }}>
-            <div style={{
-                fontWeight: '600', fontSize: '14px',
-                color: '#333', marginBottom: '10px'
-            }}>
+            <div style={{ fontWeight: '600', fontSize: '14px', color: '#333', marginBottom: '10px' }}>
                 {movie.title}
-                <span style={{
-                    fontSize: '11px', color: '#888',
-                    fontWeight: 'normal', marginLeft: '8px'
-                }}>
+                <span style={{ fontSize: '11px', color: '#888', fontWeight: 'normal', marginLeft: '8px' }}>
                     {movie.genres.replace(/\|/g, ' · ')}
                 </span>
             </div>
-
-            <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px'
-            }}>
-                {CRITERIA.map(c => (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+                {criteria.map(c => (
                     <div key={c.key}>
                         <div style={{ fontSize: '11px', color: '#888', marginBottom: '3px' }}>
                             {c.emoji} {c.label}
@@ -116,11 +71,11 @@ function MovieRatingDeep({ movie, criteriaRatings, onRate }) {
                                     style={{
                                         width: '22px', height: '22px', fontSize: '10px',
                                         background: (criteriaRatings[c.key] || 0) >= star && star > 0
-                                            ? '#4a90d9' : star === 0 ? '#f0f0f0' : '#f0f0f0',
+                                            ? '#4a90d9' : '#f0f0f0',
                                         color: (criteriaRatings[c.key] || 0) >= star && star > 0
                                             ? 'white' : '#aaa',
-                                        border: 'none', borderRadius: '4px', cursor: 'pointer',
-                                        fontWeight: '600'
+                                        border: 'none', borderRadius: '4px',
+                                        cursor: 'pointer', fontWeight: '600'
                                     }}>
                                     {star === 0 ? '–' : star}
                                 </button>
@@ -134,6 +89,20 @@ function MovieRatingDeep({ movie, criteriaRatings, onRate }) {
 }
 
 export default function DeepAnalysisFlow({ API }) {
+    const { t } = useLang()
+
+    const CRITERIA = [
+        { key: 'plot', label: t('deep.criteria.plot'), desc: t('deep.criteria_desc.plot'), emoji: '📖' },
+        { key: 'acting', label: t('deep.criteria.acting'), desc: t('deep.criteria_desc.acting'), emoji: '🎭' },
+        { key: 'visuals', label: t('deep.criteria.visuals'), desc: t('deep.criteria_desc.visuals'), emoji: '🎨' },
+        { key: 'music', label: t('deep.criteria.music'), desc: t('deep.criteria_desc.music'), emoji: '🎵' },
+        { key: 'emotions', label: t('deep.criteria.emotions'), desc: t('deep.criteria_desc.emotions'), emoji: '❤️' },
+        { key: 'originality', label: t('deep.criteria.originality'), desc: t('deep.criteria_desc.originality'), emoji: '✨' },
+    ]
+
+    const AGE_OPTIONS = [1, 18, 25, 35, 45, 50, 56]
+    const OCC_OPTIONS = Array.from({ length: 21 }, (_, i) => i)
+
     const [step, setStep] = useState(1)
     const [gender, setGender] = useState('M')
     const [age, setAge] = useState(25)
@@ -148,13 +117,10 @@ export default function DeepAnalysisFlow({ API }) {
     const [excludedGenres, setExcludedGenres] = useState([])
 
     const totalWeight = Object.values(weights).reduce((a, b) => a + b, 0)
-
     const ratedMoviesCount = Object.values(movieRatings)
         .filter(r => Object.values(r).some(v => v > 0)).length
 
-    function setWeight(key, val) {
-        setWeights(prev => ({ ...prev, [key]: val }))
-    }
+    function setWeight(key, val) { setWeights(prev => ({ ...prev, [key]: val })) }
 
     function setMovieRating(movieId, criterion, value) {
         setMovieRatings(prev => ({
@@ -164,18 +130,14 @@ export default function DeepAnalysisFlow({ API }) {
     }
 
     function computeWeightedRating(criteriaRatings) {
-        let weightedSum = 0
-        let weightSum = 0
+        let weightedSum = 0, weightSum = 0
         for (const c of CRITERIA) {
             const rating = criteriaRatings[c.key] || 0
             const weight = weights[c.key] || 0
-            if (rating > 0) {
-                weightedSum += rating * weight
-                weightSum += weight
-            }
+            if (rating > 0) { weightedSum += rating * weight; weightSum += weight }
         }
         if (weightSum === 0) return null
-        return (weightedSum / weightSum)
+        return weightedSum / weightSum
     }
 
     async function handleSubmit() {
@@ -183,26 +145,18 @@ export default function DeepAnalysisFlow({ API }) {
         for (const [movieIdStr, criteriaRatings] of Object.entries(movieRatings)) {
             const weighted = computeWeightedRating(criteriaRatings)
             if (weighted !== null) {
-                ratingsPayload.push({
-                    movieId: parseInt(movieIdStr),
-                    rating: parseFloat(weighted.toFixed(2))
-                })
+                ratingsPayload.push({ movieId: parseInt(movieIdStr), rating: parseFloat(weighted.toFixed(2)) })
             }
         }
-
         if (ratingsPayload.length < 3) {
-            setError('Oceń co najmniej 3 filmy (podaj co najmniej jedną ocenę kryterium)')
+            setError('Oceń co najmniej 3 filmy')
             return
         }
-
         setLoading(true)
         setError(null)
         try {
             const res = await axios.post(`${API}/recommend-new-user`, {
-                ratings: ratingsPayload,
-                age: parseInt(age),
-                gender,
-                occupation: parseInt(occupation)
+                ratings: ratingsPayload, age: parseInt(age), gender, occupation: parseInt(occupation)
             })
             setResults({ ...res.data, ratingsPayload, weights })
             setStep(4)
@@ -214,11 +168,13 @@ export default function DeepAnalysisFlow({ API }) {
     }
 
     function handleReset() {
-        setStep(1)
-        setMovieRatings({})
-        setResults(null)
-        setError(null)
+        setStep(1); setMovieRatings({}); setResults(null); setError(null)
         setWeights({ plot: 50, acting: 50, visuals: 30, music: 30, emotions: 50, originality: 40 })
+    }
+
+    function filterByGenre(recs) {
+        if (excludedGenres.length === 0) return recs
+        return recs.filter(rec => !excludedGenres.some(g => rec.genres.includes(g)))
     }
 
     const inputStyle = {
@@ -237,48 +193,33 @@ export default function DeepAnalysisFlow({ API }) {
                 fontSize: '13px', fontWeight: '700', flexShrink: 0
             }}>{n}</div>
             <span style={{
-                fontSize: '13px',
-                color: step >= n ? '#333' : '#aaa',
+                fontSize: '13px', color: step >= n ? '#333' : '#aaa',
                 fontWeight: step === n ? '600' : 'normal'
-            }}>
-                {label}
-            </span>
+            }}>{label}</span>
         </div>
     )
-
-    function filterByGenre(recs) {
-        if (excludedGenres.length === 0) return recs
-        return recs.filter(rec =>
-            !excludedGenres.some(g => rec.genres.includes(g))
-        )
-    }
 
     return (
         <div>
             {/* pasek kroków */}
-            <div style={{
-                display: 'flex', gap: '24px', marginBottom: '32px',
-                flexWrap: 'wrap', alignItems: 'center'
-            }}>
-                {stepIndicator(1, 'Profil')}
+            <div style={{ display: 'flex', gap: '24px', marginBottom: '32px', flexWrap: 'wrap', alignItems: 'center' }}>
+                {stepIndicator(1, t('deep.step1'))}
                 <div style={{ width: '32px', height: '2px', background: '#e0e0e0' }} />
-                {stepIndicator(2, 'Wagi kryteriów')}
+                {stepIndicator(2, t('deep.step2'))}
                 <div style={{ width: '32px', height: '2px', background: '#e0e0e0' }} />
-                {stepIndicator(3, 'Oceń filmy')}
+                {stepIndicator(3, t('deep.step3'))}
                 <div style={{ width: '32px', height: '2px', background: '#e0e0e0' }} />
-                {stepIndicator(4, 'Wyniki')}
+                {stepIndicator(4, t('deep.step4'))}
             </div>
 
-            {/* KROK 1 — profil */}
+            {/* KROK 1 */}
             {step === 1 && (
                 <div style={{ maxWidth: '560px' }}>
-                    <h2 style={{ marginBottom: '8px' }}>👤 Krok 1 — Twój profil</h2>
-                    <p style={{ color: '#666', marginBottom: '24px' }}>
-                        Dane demograficzne pomagają modelowi lepiej dopasować rekomendacje.
-                    </p>
+                    <h2 style={{ marginBottom: '8px' }}>👤 {t('new_user.step1_title')}</h2>
+                    <p style={{ color: '#666', marginBottom: '24px' }}>{t('new_user.step1_desc')}</p>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                         <div>
-                            <div style={{ fontSize: '13px', color: '#888', marginBottom: '6px' }}>Płeć</div>
+                            <div style={{ fontSize: '13px', color: '#888', marginBottom: '6px' }}>{t('profile.gender')}</div>
                             <div style={{ display: 'flex', gap: '10px' }}>
                                 {['M', 'F'].map(g => (
                                     <button key={g} onClick={() => setGender(g)} style={{
@@ -287,21 +228,21 @@ export default function DeepAnalysisFlow({ API }) {
                                         color: gender === g ? 'white' : '#666',
                                         border: 'none', borderRadius: '8px', cursor: 'pointer'
                                     }}>
-                                        {g === 'M' ? '👨 Mężczyzna' : '👩 Kobieta'}
+                                        {t('gender', g === 'M' ? 'M_icon' : 'F_icon')}
                                     </button>
                                 ))}
                             </div>
                         </div>
                         <div>
-                            <div style={{ fontSize: '13px', color: '#888', marginBottom: '6px' }}>Wiek</div>
+                            <div style={{ fontSize: '13px', color: '#888', marginBottom: '6px' }}>{t('profile.age')}</div>
                             <select value={age} onChange={e => setAge(e.target.value)} style={inputStyle}>
-                                {AGE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                                {AGE_OPTIONS.map(v => <option key={v} value={v}>{t('age', v)}</option>)}
                             </select>
                         </div>
                         <div>
-                            <div style={{ fontSize: '13px', color: '#888', marginBottom: '6px' }}>Zawód</div>
+                            <div style={{ fontSize: '13px', color: '#888', marginBottom: '6px' }}>{t('profile.occupation')}</div>
                             <select value={occupation} onChange={e => setOccupation(e.target.value)} style={inputStyle}>
-                                {OCC_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                                {OCC_OPTIONS.map(v => <option key={v} value={v}>{t('occupation', v)}</option>)}
                             </select>
                         </div>
                         <button onClick={() => setStep(2)} style={{
@@ -309,47 +250,35 @@ export default function DeepAnalysisFlow({ API }) {
                             border: 'none', borderRadius: '8px', cursor: 'pointer',
                             fontSize: '15px', fontWeight: '600', alignSelf: 'flex-start'
                         }}>
-                            Dalej → Ustaw wagi
+                            {t('new_user.next_rate')}
                         </button>
                     </div>
                 </div>
             )}
 
-            {/* KROK 2 — wagi kryteriów */}
+            {/* KROK 2 */}
             {step === 2 && (
                 <div style={{ maxWidth: '640px' }}>
-                    <h2 style={{ marginBottom: '8px' }}>⚖️ Krok 2 — Co jest dla Ciebie ważne w filmie?</h2>
-                    <p style={{ color: '#666', marginBottom: '8px' }}>
-                        Przesuń suwaki żeby powiedzieć modelowi co najbardziej cenisz.
-                        Na tej podstawie Twoje oceny filmów zostaną przeliczone.
-                    </p>
+                    <h2 style={{ marginBottom: '8px' }}>⚖️ {t('deep.weights_title')}</h2>
+                    <p style={{ color: '#666', marginBottom: '8px' }}>{t('deep.weights_desc')}</p>
                     <div style={{
                         fontSize: '12px', color: '#888', marginBottom: '20px',
                         padding: '10px', background: '#f0f7ff',
                         borderRadius: '8px', border: '1px solid #cce0ff'
                     }}>
-                        💡 Przykład: jeśli fabuła = 80% a efekty = 20%, film z genialną historią
-                        ale słabymi efektami dostanie od Ciebie wyższą ocenę niż widowiskowy blockbuster
-                        bez treści.
+                        💡 {t('deep.weights_hint')}
                     </div>
-
                     {CRITERIA.map(c => (
                         <WeightSlider key={c.key} criterion={c}
-                            value={weights[c.key]}
-                            onChange={val => setWeight(c.key, val)} />
+                            value={weights[c.key]} onChange={val => setWeight(c.key, val)} />
                     ))}
-
-                    <div style={{
-                        background: '#f8f9fa', borderRadius: '8px',
-                        padding: '12px', marginBottom: '20px'
-                    }}>
+                    <div style={{ background: '#f8f9fa', borderRadius: '8px', padding: '12px', marginBottom: '20px' }}>
                         <div style={{ fontSize: '13px', color: '#666', marginBottom: '8px' }}>
-                            Podgląd wag (suma: {totalWeight} punktów):
+                            {t('deep.weights_total')} {totalWeight} {t('deep.weights_points')}
                         </div>
                         <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                             {CRITERIA.map(c => {
-                                const pct = totalWeight > 0
-                                    ? Math.round(weights[c.key] / totalWeight * 100) : 0
+                                const pct = totalWeight > 0 ? Math.round(weights[c.key] / totalWeight * 100) : 0
                                 return (
                                     <div key={c.key} style={{
                                         padding: '4px 10px', background: '#e8f4fd',
@@ -361,61 +290,46 @@ export default function DeepAnalysisFlow({ API }) {
                             })}
                         </div>
                     </div>
-
                     <div style={{ display: 'flex', gap: '12px' }}>
                         <button onClick={() => setStep(1)} style={{
                             padding: '10px 20px', background: '#eee', color: '#666',
                             border: 'none', borderRadius: '8px', cursor: 'pointer'
-                        }}>← Wróć</button>
+                        }}>← {t('new_user.back')}</button>
                         <button onClick={() => setStep(3)} style={{
                             padding: '12px 32px', background: '#4a90d9', color: 'white',
                             border: 'none', borderRadius: '8px', cursor: 'pointer',
                             fontSize: '15px', fontWeight: '600'
-                        }}>Dalej → Oceń filmy</button>
+                        }}>{t('deep.rate_title').split('—')[0].trim()} →</button>
                     </div>
                 </div>
             )}
 
-            {/* KROK 3 — oceń filmy */}
+            {/* KROK 3 */}
             {step === 3 && (
                 <div>
                     <div style={{
                         display: 'flex', justifyContent: 'space-between',
                         alignItems: 'center', marginBottom: '8px'
                     }}>
-                        <h2 style={{ margin: 0 }}>🎬 Krok 3 — Oceń filmy według kryteriów</h2>
-                        <div style={{
-                            fontSize: '14px',
-                            color: ratedMoviesCount >= 3 ? '#2ecc71' : '#888'
-                        }}>
-                            {ratedMoviesCount >= 3 ? '✅' : '⏳'} Oceniono: {ratedMoviesCount} / min. 3
+                        <h2 style={{ margin: 0 }}>🎬 {t('deep.rate_title')}</h2>
+                        <div style={{ fontSize: '14px', color: ratedMoviesCount >= 3 ? '#2ecc71' : '#888' }}>
+                            {ratedMoviesCount >= 3 ? '✅' : '⏳'} {t('new_user.rated')}: {ratedMoviesCount} / {t('new_user.min_ratings')}
                         </div>
                     </div>
-                    <p style={{ color: '#666', marginBottom: '20px' }}>
-                        Dla każdego filmy który znasz oceń poszczególne kryteria (0 = pomiń).
-                        Model przeliczy oceny według Twoich wag z kroku 2.
-                    </p>
+                    <p style={{ color: '#666', marginBottom: '20px' }}>{t('deep.rate_desc')}</p>
 
                     {SAMPLE_MOVIES.map(movie => (
                         <MovieRatingDeep
-                            key={movie.movieId}
-                            movie={movie}
+                            key={movie.movieId} movie={movie}
                             criteriaRatings={movieRatings[movie.movieId] || {}}
-                            onRate={setMovieRating}
+                            onRate={setMovieRating} criteria={CRITERIA}
                         />
                     ))}
 
-                    {/* podgląd przeliczonych ocen */}
                     {ratedMoviesCount > 0 && (
-                        <div style={{
-                            background: '#f8f9fa', borderRadius: '10px',
-                            padding: '16px', marginBottom: '20px'
-                        }}>
-                            <div style={{
-                                fontSize: '13px', color: '#888', marginBottom: '10px',
-                                fontWeight: '600'
-                            }}>
-                                Podgląd przeliczonych ocen (po uwzględnieniu wag):
+                        <div style={{ background: '#f8f9fa', borderRadius: '10px', padding: '16px', marginBottom: '20px' }}>
+                            <div style={{ fontSize: '13px', color: '#888', marginBottom: '10px', fontWeight: '600' }}>
+                                {t('deep.preview_title')}
                             </div>
                             {SAMPLE_MOVIES.map(movie => {
                                 const cr = movieRatings[movie.movieId]
@@ -438,17 +352,13 @@ export default function DeepAnalysisFlow({ API }) {
                         </div>
                     )}
 
-                    {error && (
-                        <div style={{ color: '#c00', fontSize: '14px', marginBottom: '12px' }}>
-                            ⚠️ {error}
-                        </div>
-                    )}
+                    {error && <div style={{ color: '#c00', fontSize: '14px', marginBottom: '12px' }}>⚠️ {error}</div>}
 
                     <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                         <button onClick={() => setStep(2)} style={{
                             padding: '10px 20px', background: '#eee', color: '#666',
                             border: 'none', borderRadius: '8px', cursor: 'pointer'
-                        }}>← Wróć</button>
+                        }}>← {t('new_user.back')}</button>
                         <button onClick={handleSubmit}
                             disabled={ratedMoviesCount < 3 || loading}
                             style={{
@@ -460,13 +370,13 @@ export default function DeepAnalysisFlow({ API }) {
                                 display: 'flex', alignItems: 'center', gap: '10px'
                             }}>
                             {loading && <Spinner size={18} color="white" />}
-                            {loading ? 'Generowanie...' : '🔬 Generuj rekomendacje'}
+                            {loading ? t('new_user.generating') : `🔬 ${t('new_user.generate')}`}
                         </button>
                     </div>
                 </div>
             )}
 
-            {/* KROK 4 — wyniki */}
+            {/* KROK 4 */}
             {step === 4 && results && (
                 <div>
                     <GenreFilter selected={excludedGenres} onChange={setExcludedGenres} />
@@ -474,29 +384,21 @@ export default function DeepAnalysisFlow({ API }) {
                         display: 'flex', justifyContent: 'space-between',
                         alignItems: 'center', marginBottom: '20px'
                     }}>
-                        <h2 style={{ margin: 0 }}>🎉 Twoje rekomendacje</h2>
+                        <h2 style={{ margin: 0 }}>🎉 {t('new_user.step3_title')}</h2>
                         <button onClick={handleReset} style={{
                             padding: '8px 20px', background: '#eee', color: '#666',
                             border: 'none', borderRadius: '8px', cursor: 'pointer'
-                        }}>↺ Zacznij od nowa</button>
+                        }}>↺ {t('new_user.reset')}</button>
                     </div>
 
-                    {/* podsumowanie wag */}
-                    <div style={{
-                        background: '#f8f9fa', borderRadius: '10px',
-                        padding: '16px', marginBottom: '20px'
-                    }}>
-                        <div style={{
-                            fontSize: '13px', color: '#888',
-                            marginBottom: '10px', fontWeight: '600'
-                        }}>
-                            Zastosowane wagi kryteriów:
+                    <div style={{ background: '#f8f9fa', borderRadius: '10px', padding: '16px', marginBottom: '20px' }}>
+                        <div style={{ fontSize: '13px', color: '#888', marginBottom: '10px', fontWeight: '600' }}>
+                            {t('deep.results_weights')}
                         </div>
                         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                             {CRITERIA.map(c => {
                                 const total = Object.values(results.weights).reduce((a, b) => a + b, 0)
-                                const pct = total > 0
-                                    ? Math.round(results.weights[c.key] / total * 100) : 0
+                                const pct = total > 0 ? Math.round(results.weights[c.key] / total * 100) : 0
                                 return (
                                     <div key={c.key} style={{
                                         padding: '6px 12px', background: 'white',
@@ -504,26 +406,16 @@ export default function DeepAnalysisFlow({ API }) {
                                         fontSize: '13px', color: '#333'
                                     }}>
                                         {c.emoji} {c.label}:
-                                        <span style={{
-                                            color: '#4a90d9', fontWeight: '700',
-                                            marginLeft: '4px'
-                                        }}>{pct}%</span>
+                                        <span style={{ color: '#4a90d9', fontWeight: '700', marginLeft: '4px' }}>{pct}%</span>
                                     </div>
                                 )
                             })}
                         </div>
                     </div>
 
-                    {/* oceny wejściowe */}
-                    <div style={{
-                        background: '#f8f9fa', borderRadius: '10px',
-                        padding: '16px', marginBottom: '24px'
-                    }}>
-                        <div style={{
-                            fontSize: '13px', color: '#888',
-                            marginBottom: '10px', fontWeight: '600'
-                        }}>
-                            Przeliczone oceny które trafiły do modelu:
+                    <div style={{ background: '#f8f9fa', borderRadius: '10px', padding: '16px', marginBottom: '24px' }}>
+                        <div style={{ fontSize: '13px', color: '#888', marginBottom: '10px', fontWeight: '600' }}>
+                            {t('deep.results_ratings')}
                         </div>
                         {results.ratingsPayload.map(r => {
                             const movie = SAMPLE_MOVIES.find(m => m.movieId === r.movieId)
@@ -542,34 +434,24 @@ export default function DeepAnalysisFlow({ API }) {
                         })}
                     </div>
 
-                    {/* rekomendacje */}
-                    <div style={{
-                        display: 'grid', gridTemplateColumns: '1fr 1fr',
-                        gap: '24px'
-                    }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
                         <div>
-                            <h3 style={{
-                                borderBottom: '2px solid #4a90d9',
-                                paddingBottom: '8px'
-                            }}>
-                                📈 Regresja liniowa
+                            <h3 style={{ borderBottom: '2px solid #4a90d9', paddingBottom: '8px' }}>
+                                📈 {t('new_user.panel_linear')}
                             </h3>
                             <p style={{ color: '#666', fontSize: '13px', marginBottom: '12px' }}>
-                                Przewidywana ocena (1–5) na podstawie Twoich ważonych preferencji
+                                {t('recommendations.linear_desc')}
                             </p>
                             {filterByGenre(results.linear).map((rec, i) => (
                                 <RecommendationCard key={rec.movieId} rank={i + 1} rec={rec} type="linear" />
                             ))}
                         </div>
                         <div>
-                            <h3 style={{
-                                borderBottom: '2px solid #e87040',
-                                paddingBottom: '8px'
-                            }}>
-                                🎯 Regresja logistyczna
+                            <h3 style={{ borderBottom: '2px solid #e87040', paddingBottom: '8px' }}>
+                                🎯 {t('new_user.panel_logistic')}
                             </h3>
                             <p style={{ color: '#666', fontSize: '13px', marginBottom: '12px' }}>
-                                Prawdopodobieństwo że Ci się spodoba (próg: {results.optimal_threshold})
+                                {t('new_user.threshold_desc')} ({results.optimal_threshold})
                             </p>
                             {filterByGenre(results.logistic).map((rec, i) => (
                                 <RecommendationCard key={rec.movieId} rank={i + 1} rec={rec} type="logistic" />

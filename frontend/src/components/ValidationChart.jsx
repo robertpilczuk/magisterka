@@ -1,4 +1,7 @@
+import { useLang } from '../LangContext'
+
 export default function ValidationChart({ validation, excludedGenres = [] }) {
+    const { t } = useLang()
     if (!validation) return null
 
     const { rmse, mae, count, samples } = validation
@@ -11,50 +14,37 @@ export default function ValidationChart({ validation, excludedGenres = [] }) {
             borderRadius: '12px',
             padding: '24px'
         }}>
-            <h2 style={{ marginTop: 0, marginBottom: '8px' }}>🔬 Walidacja modelu</h2>
+            <h2 style={{ marginTop: 0, marginBottom: '8px' }}>🔬 {t('validation.title')}</h2>
             <p style={{ color: '#666', fontSize: '14px', marginBottom: '20px' }}>
-                Porównanie przewidywanych vs rzeczywistych ocen dla tego użytkownika
-                (na podstawie {count} ocen).
+                {t('validation.subtitle')} ({t('validation.based_on')} {count} {t('validation.ratings')}).
             </p>
 
-            {/* metryki */}
             <div style={{ display: 'flex', gap: '24px', marginBottom: '24px', flexWrap: 'wrap' }}>
-                <div style={{
-                    background: 'white', borderRadius: '10px', padding: '16px 24px',
-                    border: '1px solid #e0e0e0', textAlign: 'center'
-                }}>
-                    <div style={{ color: '#888', fontSize: '13px' }}>RMSE</div>
-                    <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#4a90d9' }}>{rmse}</div>
-                    <div style={{ color: '#aaa', fontSize: '12px' }}>im niższe tym lepiej</div>
-                </div>
-                <div style={{
-                    background: 'white', borderRadius: '10px', padding: '16px 24px',
-                    border: '1px solid #e0e0e0', textAlign: 'center'
-                }}>
-                    <div style={{ color: '#888', fontSize: '13px' }}>MAE</div>
-                    <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#4a90d9' }}>{mae}</div>
-                    <div style={{ color: '#aaa', fontSize: '12px' }}>im niższe tym lepiej</div>
-                </div>
-                <div style={{
-                    background: 'white', borderRadius: '10px', padding: '16px 24px',
-                    border: '1px solid #e0e0e0', textAlign: 'center'
-                }}>
-                    <div style={{ color: '#888', fontSize: '13px' }}>Liczba ocen</div>
-                    <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#4a90d9' }}>{count}</div>
-                    <div style={{ color: '#aaa', fontSize: '12px' }}>użytkownika</div>
-                </div>
+                {[
+                    { label: 'RMSE', value: rmse, hint: t('validation.rmse_hint') },
+                    { label: 'MAE', value: mae, hint: t('validation.mae_hint') },
+                    { label: t('validation.col_actual').replace('Ocena ', '').replace('rating', 'count'), value: count, hint: t('validation.count_hint') }
+                ].map(({ label, value, hint }) => (
+                    <div key={label} style={{
+                        background: 'white', borderRadius: '10px', padding: '16px 24px',
+                        border: '1px solid #e0e0e0', textAlign: 'center'
+                    }}>
+                        <div style={{ color: '#888', fontSize: '13px' }}>{label}</div>
+                        <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#4a90d9' }}>{value}</div>
+                        <div style={{ color: '#aaa', fontSize: '12px' }}>{hint}</div>
+                    </div>
+                ))}
             </div>
 
-            {/* tabela próbki */}
-            <h3 style={{ marginBottom: '12px' }}>Próbka 20 przewidywań</h3>
+            <h3 style={{ marginBottom: '12px' }}>{t('validation.sample_title')}</h3>
             <div style={{ overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
                     <thead>
                         <tr style={{ background: '#e8e8e8' }}>
-                            <th style={{ padding: '8px 12px', textAlign: 'left' }}>Film</th>
-                            <th style={{ padding: '8px 12px', textAlign: 'center' }}>Ocena rzeczywista</th>
-                            <th style={{ padding: '8px 12px', textAlign: 'center' }}>Ocena przewidywana</th>
-                            <th style={{ padding: '8px 12px', textAlign: 'center' }}>Różnica</th>
+                            <th style={{ padding: '8px 12px', textAlign: 'left' }}>{t('validation.col_film')}</th>
+                            <th style={{ padding: '8px 12px', textAlign: 'center' }}>{t('validation.col_actual')}</th>
+                            <th style={{ padding: '8px 12px', textAlign: 'center' }}>{t('validation.col_pred')}</th>
+                            <th style={{ padding: '8px 12px', textAlign: 'center' }}>{t('validation.col_diff')}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -75,22 +65,13 @@ export default function ValidationChart({ validation, excludedGenres = [] }) {
                                     <td style={{ padding: '8px 12px', color: isExcluded ? '#aaa' : '#333' }}>
                                         {s.title}
                                     </td>
-                                    <td style={{
-                                        padding: '8px 12px', textAlign: 'center',
-                                        color: isExcluded ? '#aaa' : '#333'
-                                    }}>
+                                    <td style={{ padding: '8px 12px', textAlign: 'center', color: isExcluded ? '#aaa' : '#333' }}>
                                         ⭐ {s.actual}
                                     </td>
-                                    <td style={{
-                                        padding: '8px 12px', textAlign: 'center',
-                                        color: isExcluded ? '#aaa' : '#333'
-                                    }}>
+                                    <td style={{ padding: '8px 12px', textAlign: 'center', color: isExcluded ? '#aaa' : '#333' }}>
                                         ⭐ {s.predicted}
                                     </td>
-                                    <td style={{
-                                        padding: '8px 12px', textAlign: 'center',
-                                        color: isExcluded ? '#aaa' : diffColor, fontWeight: '600'
-                                    }}>
+                                    <td style={{ padding: '8px 12px', textAlign: 'center', color: isExcluded ? '#aaa' : diffColor, fontWeight: '600' }}>
                                         {diff > 0 ? '+' : ''}{diff}
                                     </td>
                                 </tr>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { setLang, getLang } from './i18n'
+import { useLang } from './LangContext'
 import axios from 'axios'
 import SearchBar from './components/SearchBar'
 import UserProfile from './components/UserProfile'
@@ -35,14 +35,9 @@ export default function App() {
   const [comparison, setComparison] = useState(null)
   const [compareLoading, setCompareLoading] = useState(false)
 
-  const [lang, setLangState] = useState('PL')
-
+  const { lang, setLang, t } = useLang()
   function toggleLang() {
-    const newLang = lang === 'PL' ? 'EN' : 'PL'
-    setLang(newLang)
-    setLangState(newLang)
-    // wymuś przeładowanie strony — najprostsze rozwiązanie
-    window.location.reload()
+    setLang(lang === 'PL' ? 'EN' : 'PL')
   }
 
   async function fetchAll(id) {
@@ -130,13 +125,13 @@ export default function App() {
         borderBottom: '1px solid #e0e0e0', marginBottom: '32px'
       }}>
         <button style={tabStyle('existing')} onClick={() => setActiveTab('existing')}>
-          👤 Użytkownik z bazy
+          👤 {t('nav.tab_existing')}
         </button>
         <button style={tabStyle('new')} onClick={() => setActiveTab('new')}>
-          ✨ Moje rekomendacje
+          ✨ {t('nav.tab_new')}
         </button>
         <button style={tabStyle('deep')} onClick={() => setActiveTab('deep')}>
-          🔬 Pogłębiona analiza
+          🔬 {t('nav.tab_deep')}
         </button>
       </div>
 
@@ -187,11 +182,11 @@ export default function App() {
                 background: '#f8f9fa', borderRadius: '12px',
                 border: '1px solid #e0e0e0'
               }}>
-                <h3 style={{ margin: '0 0 12px 0' }}>🔄 Porównaj z innym użytkownikiem</h3>
+                <h3 style={{ margin: '0 0 12px 0' }}>🔄 {t('comparison.title')}</h3>
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                   <input
                     type="number" min="1" max="6040"
-                    placeholder="ID drugiego użytkownika"
+                    placeholder={t('comparison.input_label')}
                     value={compareUserId}
                     onChange={e => setCompareUserId(e.target.value)}
                     style={{
@@ -205,7 +200,7 @@ export default function App() {
                       color: 'white', border: 'none', borderRadius: '8px',
                       cursor: 'pointer', fontSize: '14px'
                     }}>
-                    {compareLoading ? '⏳ Ładowanie...' : 'Porównaj'}
+                    {compareLoading ? t('comparison.loading') : t('comparison.button')}
                   </button>
                 </div>
               </div>

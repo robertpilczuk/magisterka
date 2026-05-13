@@ -1,13 +1,15 @@
 import { useState } from 'react'
+import { useLang } from '../LangContext'
 
 export default function SearchBar({ onSearch }) {
+    const { t } = useLang()
     const [input, setInput] = useState('')
     const [error, setError] = useState(null)
 
     function handleSearch() {
         const id = parseInt(input)
         if (isNaN(id) || id < 1 || id > 6040) {
-            setError('Podaj liczbę z zakresu 1–6040')
+            setError(t('search.error_range'))
             return
         }
         setError(null)
@@ -25,7 +27,7 @@ export default function SearchBar({ onSearch }) {
                     type="number"
                     min="1"
                     max="6040"
-                    placeholder="ID użytkownika (1–6040)"
+                    placeholder={t('search.placeholder')}
                     value={input}
                     onChange={e => setInput(e.target.value)}
                     onKeyDown={handleKey}
@@ -50,7 +52,7 @@ export default function SearchBar({ onSearch }) {
                         cursor: 'pointer'
                     }}
                 >
-                    Szukaj
+                    {t('search.button')}
                 </button>
             </div>
             {error && <span style={{ color: '#c00', fontSize: '14px' }}>{error}</span>}

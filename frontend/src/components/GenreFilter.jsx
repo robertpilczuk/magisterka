@@ -1,27 +1,16 @@
-const GENRES = [
-    { en: 'Action', pl: 'Akcja' },
-    { en: 'Adventure', pl: 'Przygodowy' },
-    { en: 'Animation', pl: 'Animacja' },
-    { en: "Children's", pl: 'Dla dzieci' },
-    { en: 'Comedy', pl: 'Komedia' },
-    { en: 'Crime', pl: 'Kryminał' },
-    { en: 'Documentary', pl: 'Dokumentalny' },
-    { en: 'Drama', pl: 'Dramat' },
-    { en: 'Fantasy', pl: 'Fantasy' },
-    { en: 'Film-Noir', pl: 'Film Noir' },
-    { en: 'Horror', pl: 'Horror' },
-    { en: 'Musical', pl: 'Musical' },
-    { en: 'Mystery', pl: 'Thriller psych.' },
-    { en: 'Romance', pl: 'Romans' },
-    { en: 'Sci-Fi', pl: 'Sci-Fi' },
-    { en: 'Thriller', pl: 'Thriller' },
-    { en: 'War', pl: 'Wojenny' },
-    { en: 'Western', pl: 'Western' }
+import { useLang } from '../LangContext'
+
+const GENRES_EN = [
+    'Action', 'Adventure', 'Animation', "Children's", 'Comedy', 'Crime',
+    'Documentary', 'Drama', 'Fantasy', 'Film-Noir', 'Horror', 'Musical',
+    'Mystery', 'Romance', 'Sci-Fi', 'Thriller', 'War', 'Western'
 ]
 
-export { GENRES }
+export { GENRES_EN }
 
 export default function GenreFilter({ selected, onChange }) {
+    const { t } = useLang()
+
     function toggle(en) {
         if (selected.includes(en)) {
             onChange(selected.filter(g => g !== en))
@@ -31,10 +20,14 @@ export default function GenreFilter({ selected, onChange }) {
     }
 
     function selectAll() { onChange([]) }
-    function selectNone() { onChange(GENRES.map(g => g.en)) }
+    function selectNone() { onChange(GENRES_EN) }
 
-    const isExcluded = (en) => selected.includes(en)
-    const allShown = selected.length === 0
+    const hiddenCount = selected.length
+    const suffix = hiddenCount === 1
+        ? t('genre_filter.genre_suffix_1')
+        : hiddenCount < 5
+            ? t('genre_filter.genre_suffix_2')
+            : t('genre_filter.genre_suffix_5')
 
     return (
         <div style={{
@@ -46,33 +39,31 @@ export default function GenreFilter({ selected, onChange }) {
                 alignItems: 'center', marginBottom: '12px'
             }}>
                 <h4 style={{ margin: 0, color: '#333', fontSize: '14px' }}>
-                    🎬 Filtruj gatunki
+                    🎬 {t('genre_filter.title')}
                 </h4>
                 <div style={{ display: 'flex', gap: '8px' }}>
                     <button onClick={selectAll}
                         style={{
                             padding: '4px 10px', fontSize: '12px', background: '#eee',
-                            border: 'none', borderRadius: '6px', cursor: 'pointer',
-                            color: '#555'
+                            border: 'none', borderRadius: '6px', cursor: 'pointer', color: '#555'
                         }}>
-                        Pokaż wszystkie
+                        {t('genre_filter.show_all')}
                     </button>
                     <button onClick={selectNone}
                         style={{
                             padding: '4px 10px', fontSize: '12px', background: '#eee',
-                            border: 'none', borderRadius: '6px', cursor: 'pointer',
-                            color: '#555'
+                            border: 'none', borderRadius: '6px', cursor: 'pointer', color: '#555'
                         }}>
-                        Ukryj wszystkie
+                        {t('genre_filter.hide_all')}
                     </button>
                 </div>
             </div>
 
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                {GENRES.map(g => {
-                    const excluded = isExcluded(g.en)
+                {GENRES_EN.map(en => {
+                    const excluded = selected.includes(en)
                     return (
-                        <button key={g.en} onClick={() => toggle(g.en)}
+                        <button key={en} onClick={() => toggle(en)}
                             style={{
                                 padding: '5px 12px', fontSize: '12px', fontWeight: '600',
                                 border: `1px solid ${excluded ? '#e74c3c' : '#4a90d9'}`,
@@ -82,7 +73,7 @@ export default function GenreFilter({ selected, onChange }) {
                                 transition: 'all 0.15s',
                                 textDecoration: excluded ? 'line-through' : 'none'
                             }}>
-                            {excluded ? '✕ ' : ''}{g.pl}
+                            {excluded ? '✕ ' : ''}{t('genres', en)}
                         </button>
                     )
                 })}
@@ -90,8 +81,7 @@ export default function GenreFilter({ selected, onChange }) {
 
             {selected.length > 0 && (
                 <div style={{ marginTop: '10px', fontSize: '12px', color: '#e74c3c' }}>
-                    Ukryto {selected.length} {selected.length === 1 ? 'gatunek' :
-                        selected.length < 5 ? 'gatunki' : 'gatunków'}
+                    {t('genre_filter.hidden')} {hiddenCount} {suffix}
                 </div>
             )}
         </div>

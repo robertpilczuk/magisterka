@@ -1,18 +1,6 @@
 import { useState } from 'react'
 import Tooltip from './Tooltip'
-
-const GENRE_PL = {
-    'Action': 'Akcja', 'Adventure': 'Przygodowy', 'Animation': 'Animacja',
-    "Children's": 'Dla dzieci', 'Comedy': 'Komedia', 'Crime': 'Kryminał',
-    'Documentary': 'Dokumentalny', 'Drama': 'Dramat', 'Fantasy': 'Fantasy',
-    'Film-Noir': 'Film Noir', 'Horror': 'Horror', 'Musical': 'Musical',
-    'Mystery': 'Thriller psych.', 'Romance': 'Romans', 'Sci-Fi': 'Sci-Fi',
-    'Thriller': 'Thriller', 'War': 'Wojenny', 'Western': 'Western'
-}
-
-function translateGenres(genres) {
-    return genres.split('|').map(g => GENRE_PL[g] || g).join(' · ')
-}
+import { useLang } from '../LangContext'
 
 function MovieRow({ movie, color }) {
     return (
@@ -27,13 +15,10 @@ function MovieRow({ movie, color }) {
                     {movie.title}
                 </div>
                 <div style={{ fontSize: '11px', color: '#aaa', marginTop: '2px' }}>
-                    {translateGenres(movie.genres)}
+                    {movie.genres.split('|').map(g => g).join(' · ')}
                 </div>
             </div>
-            <div style={{
-                fontSize: '13px', fontWeight: '700', color,
-                whiteSpace: 'nowrap'
-            }}>
+            <div style={{ fontSize: '13px', fontWeight: '700', color, whiteSpace: 'nowrap' }}>
                 {movie.rating * 2}/10
             </div>
         </div>
@@ -42,15 +27,14 @@ function MovieRow({ movie, color }) {
 
 const PAGE_SIZE = 8
 
-function CategoryBlock({ title, tooltip, movies, color, count,
-    excludedGenres, onToggleGenre }) {
+function CategoryBlock({ title, tooltip, movies, color, count, excludedGenres, onToggleGenre }) {
     const [page, setPage] = useState(1)
+    const { t } = useLang()
 
     const filtered = excludedGenres?.length > 0
         ? movies.filter(m => !excludedGenres.some(g => m.genres.includes(g)))
         : movies
 
-    const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
     const visible = filtered.slice(0, page * PAGE_SIZE)
     const hasMore = page * PAGE_SIZE < filtered.length
 
@@ -66,17 +50,14 @@ function CategoryBlock({ title, tooltip, movies, color, count,
                 }}>
                     <span>{title}</span>
                     <span style={{ fontSize: '12px', fontWeight: 'normal', color: '#888' }}>
-                        {filtered.length}/{count} filmów
+                        {filtered.length}/{count} {t('taste.films_suffix')}
                     </span>
                 </h4>
             </Tooltip>
 
             {filtered.length === 0
-                ? <div style={{
-                    fontSize: '13px', color: '#aaa', fontStyle: 'italic',
-                    padding: '8px 0'
-                }}>
-                    Brak filmów po zastosowaniu filtrów
+                ? <div style={{ fontSize: '13px', color: '#aaa', fontStyle: 'italic', padding: '8px 0' }}>
+                    {t('taste.no_films_filter')}
                 </div>
                 : <>
                     {visible.map(m => (
@@ -90,7 +71,7 @@ function CategoryBlock({ title, tooltip, movies, color, count,
                                 borderRadius: '8px', cursor: 'pointer',
                                 fontSize: '12px', color: '#666'
                             }}>
-                            ↓ Pokaż więcej ({filtered.length - page * PAGE_SIZE} pozostałych)
+                            ↓ {t('taste.show_more')} ({filtered.length - page * PAGE_SIZE} {t('taste.remaining')})
                         </button>
                     )}
                 </>
@@ -100,6 +81,7 @@ function CategoryBlock({ title, tooltip, movies, color, count,
 }
 
 export default function UserTasteProfile({ taste, excludedGenres, onToggleGenre }) {
+    const { t } = useLang()
     if (!taste) return null
     const { topGenres, lubi, srednie, slabe, stats } = taste
 
@@ -114,29 +96,23 @@ export default function UserTasteProfile({ taste, excludedGenres, onToggleGenre 
             padding: '20px'
         }}>
             <h3 style={{ margin: '0 0 16px 0', color: '#333' }}>
-                🎭 Profil filmowy użytkownika
+                🎭 {t('taste.title')}
             </h3>
 
-            <Tooltip text={`Lubi ${lubiPct}% filmów · Neutralny wobec ${sredniePct}% · Nie lubi ${slabePct}%`}>
+            <Tooltip text={`${t('taste.likes_pct')} ${lubiPct}% · ${t('taste.neutral_pct')} ${sredniePct}% · ${t('taste.dislikes_pct')} ${slabePct}%`}>
                 <div style={{ marginBottom: '16px', cursor: 'help' }}>
                     <div style={{ fontSize: '12px', color: '#888', marginBottom: '6px' }}>
-                        Proporcje ocen
+                        {t('taste.proportions')}
                     </div>
-                    <div style={{
-                        display: 'flex', height: '12px',
-                        borderRadius: '6px', overflow: 'hidden'
-                    }}>
+                    <div style={{ display: 'flex', height: '12px', borderRadius: '6px', overflow: 'hidden' }}>
                         <div style={{ width: `${lubiPct}%`, background: '#2ecc71' }} />
                         <div style={{ width: `${sredniePct}%`, background: '#f39c12' }} />
                         <div style={{ width: `${slabePct}%`, background: '#e74c3c' }} />
                     </div>
-                    <div style={{
-                        display: 'flex', gap: '16px', marginTop: '6px',
-                        fontSize: '12px'
-                    }}>
-                        <span style={{ color: '#2ecc71' }}>■ Lubi {lubiPct}%</span>
-                        <span style={{ color: '#f39c12' }}>■ Neutralne {sredniePct}%</span>
-                        <span style={{ color: '#e74c3c' }}>■ Nie lubi {slabePct}%</span>
+                    <div style={{ display: 'flex', gap: '16px', marginTop: '6px', fontSize: '12px' }}>
+                        <span style={{ color: '#2ecc71' }}>■ {t('taste.likes_pct')} {lubiPct}%</span>
+                        <span style={{ color: '#f39c12' }}>■ {t('taste.neutral_pct')} {sredniePct}%</span>
+                        <span style={{ color: '#e74c3c' }}>■ {t('taste.dislikes_pct')} {slabePct}%</span>
                     </div>
                 </div>
             </Tooltip>
@@ -144,7 +120,7 @@ export default function UserTasteProfile({ taste, excludedGenres, onToggleGenre 
             {topGenres.length > 0 && (
                 <div style={{ marginBottom: '16px' }}>
                     <div style={{ fontSize: '12px', color: '#888', marginBottom: '6px' }}>
-                        Ulubione gatunki — kliknij żeby wykluczyć z rekomendacji:
+                        {t('taste.top_genres')}
                     </div>
                     <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                         {topGenres.map(g => (
@@ -158,7 +134,7 @@ export default function UserTasteProfile({ taste, excludedGenres, onToggleGenre 
                                     cursor: 'pointer', transition: 'all 0.15s',
                                     textDecoration: excludedGenres?.includes(g) ? 'line-through' : 'none'
                                 }}>
-                                {excludedGenres?.includes(g) ? '✕ ' : ''}{GENRE_PL[g] || g}
+                                {excludedGenres?.includes(g) ? '✕ ' : ''}{t('genres', g)}
                             </button>
                         ))}
                     </div>
@@ -167,18 +143,18 @@ export default function UserTasteProfile({ taste, excludedGenres, onToggleGenre 
 
             <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
                 <CategoryBlock
-                    title="👍 Lubi" color="#2ecc71" movies={lubi} count={stats.lubiCount}
-                    tooltip="Filmy ocenione 8–10/10 — model generuje rekomendacje na ich podstawie"
+                    title={t('taste.likes')} color="#2ecc71" movies={lubi} count={stats.lubiCount}
+                    tooltip={t('taste.likes_tooltip')}
                     excludedGenres={excludedGenres} onToggleGenre={onToggleGenre}
                 />
                 <CategoryBlock
-                    title="😐 Neutralne" color="#f39c12" movies={srednie} count={stats.srednieCount}
-                    tooltip="Filmy ocenione 6/10 — słaby sygnał dla modelu"
+                    title={t('taste.neutral')} color="#f39c12" movies={srednie} count={stats.srednieCount}
+                    tooltip={t('taste.neutral_tooltip')}
                     excludedGenres={excludedGenres} onToggleGenre={onToggleGenre}
                 />
                 <CategoryBlock
-                    title="👎 Nie lubi" color="#e74c3c" movies={slabe} count={stats.slabeCount}
-                    tooltip="Filmy ocenione 2–4/10 — model stara się unikać podobnych tytułów"
+                    title={t('taste.dislikes')} color="#e74c3c" movies={slabe} count={stats.slabeCount}
+                    tooltip={t('taste.dislikes_tooltip')}
                     excludedGenres={excludedGenres} onToggleGenre={onToggleGenre}
                 />
             </div>

@@ -3,55 +3,23 @@ import axios from 'axios'
 import Spinner from './Spinner'
 import Tooltip from './Tooltip'
 import { getRatingStyle } from '../utils'
-
-const AGE_OPTIONS = [
-    { value: 1, label: 'Poniżej 18' },
-    { value: 18, label: '18–24' },
-    { value: 25, label: '25–34' },
-    { value: 35, label: '35–44' },
-    { value: 45, label: '45–49' },
-    { value: 50, label: '50–55' },
-    { value: 56, label: '56+' }
-]
-
-const OCC_OPTIONS = [
-    { value: 0, label: 'Inne / nieokreślone' },
-    { value: 1, label: 'Naukowiec / wykładowca' },
-    { value: 2, label: 'Artysta' },
-    { value: 3, label: 'Pracownik biurowy' },
-    { value: 4, label: 'Student' },
-    { value: 5, label: 'Obsługa klienta' },
-    { value: 6, label: 'Lekarz / służba zdrowia' },
-    { value: 7, label: 'Menedżer / dyrektor' },
-    { value: 8, label: 'Rolnik' },
-    { value: 9, label: 'Gospodarz/ni domowy/a' },
-    { value: 10, label: 'Uczeń (szkoła podstawowa/średnia)' },
-    { value: 11, label: 'Prawnik' },
-    { value: 12, label: 'Programista' },
-    { value: 13, label: 'Emeryt/rencista' },
-    { value: 14, label: 'Sprzedaż / marketing' },
-    { value: 15, label: 'Naukowiec' },
-    { value: 16, label: 'Samozatrudniony' },
-    { value: 17, label: 'Technik / inżynier' },
-    { value: 18, label: 'Rzemieślnik' },
-    { value: 19, label: 'Bezrobotny' },
-    { value: 20, label: 'Pisarz / dziennikarz' }
-]
-
-const AGE_LABELS = {
-    1: 'Poniżej 18', 18: '18–24', 25: '25–34', 35: '35–44',
-    45: '45–49', 50: '50–55', 56: '56+'
-}
-const OCC_LABELS = Object.fromEntries(OCC_OPTIONS.map(o => [o.value, o.label]))
-
+import { useLang } from '../LangContext'
 
 export default function SimilarUsersFilter({ API, onSelectUser }) {
+    const { t } = useLang()
     const [gender, setGender] = useState('')
     const [age, setAge] = useState('')
     const [occupation, setOccupation] = useState('')
     const [results, setResults] = useState([])
     const [loading, setLoading] = useState(false)
     const [searched, setSearched] = useState(false)
+
+    const AGE_OPTIONS = [
+        { value: 1 }, { value: 18 }, { value: 25 }, { value: 35 },
+        { value: 45 }, { value: 50 }, { value: 56 }
+    ]
+
+    const OCC_OPTIONS = Array.from({ length: 21 }, (_, i) => ({ value: i }))
 
     const selectStyle = {
         padding: '8px 12px', borderRadius: '8px',
@@ -91,7 +59,7 @@ export default function SimilarUsersFilter({ API, onSelectUser }) {
             borderRadius: '12px', padding: '20px', marginBottom: '24px'
         }}>
             <h3 style={{ margin: '0 0 16px 0', color: '#333' }}>
-                🔍 Znajdź podobnych użytkowników
+                🔍 {t('similar.title')}
             </h3>
 
             <div style={{
@@ -99,30 +67,30 @@ export default function SimilarUsersFilter({ API, onSelectUser }) {
                 alignItems: 'flex-end', marginBottom: '16px'
             }}>
                 <div>
-                    <div style={{ fontSize: '12px', color: '#888', marginBottom: '4px' }}>Płeć</div>
+                    <div style={{ fontSize: '12px', color: '#888', marginBottom: '4px' }}>{t('similar.gender_label')}</div>
                     <select value={gender} onChange={e => setGender(e.target.value)} style={selectStyle}>
-                        <option value="">Dowolna</option>
-                        <option value="M">Mężczyzna</option>
-                        <option value="F">Kobieta</option>
+                        <option value="">{t('similar.any_gender')}</option>
+                        <option value="M">{t('gender', 'M')}</option>
+                        <option value="F">{t('gender', 'F')}</option>
                     </select>
                 </div>
 
                 <div>
-                    <div style={{ fontSize: '12px', color: '#888', marginBottom: '4px' }}>Wiek</div>
+                    <div style={{ fontSize: '12px', color: '#888', marginBottom: '4px' }}>{t('similar.age_label')}</div>
                     <select value={age} onChange={e => setAge(e.target.value)} style={selectStyle}>
-                        <option value="">Dowolny</option>
+                        <option value="">{t('similar.any_age')}</option>
                         {AGE_OPTIONS.map(o => (
-                            <option key={o.value} value={o.value}>{o.label}</option>
+                            <option key={o.value} value={o.value}>{t('age', o.value)}</option>
                         ))}
                     </select>
                 </div>
 
                 <div>
-                    <div style={{ fontSize: '12px', color: '#888', marginBottom: '4px' }}>Zawód</div>
+                    <div style={{ fontSize: '12px', color: '#888', marginBottom: '4px' }}>{t('similar.occ_label')}</div>
                     <select value={occupation} onChange={e => setOccupation(e.target.value)} style={selectStyle}>
-                        <option value="">Dowolny</option>
+                        <option value="">{t('similar.any_occ')}</option>
                         {OCC_OPTIONS.map(o => (
-                            <option key={o.value} value={o.value}>{o.label}</option>
+                            <option key={o.value} value={o.value}>{t('occupation', o.value)}</option>
                         ))}
                     </select>
                 </div>
@@ -135,7 +103,7 @@ export default function SimilarUsersFilter({ API, onSelectUser }) {
                         display: 'flex', alignItems: 'center', gap: '8px'
                     }}>
                     {loading ? <Spinner size={16} color="white" /> : '🔍'}
-                    {loading ? 'Szukam...' : 'Szukaj'}
+                    {loading ? t('similar.loading') : t('similar.button')}
                 </button>
 
                 {searched && (
@@ -145,25 +113,25 @@ export default function SimilarUsersFilter({ API, onSelectUser }) {
                             border: 'none', borderRadius: '8px', cursor: 'pointer',
                             fontSize: '14px', height: '38px'
                         }}>
-                        ✕ Reset
+                        ✕ {t('similar.reset')}
                     </button>
                 )}
             </div>
 
             {searched && !loading && results.length === 0 && (
                 <div style={{ color: '#888', fontSize: '14px' }}>
-                    Brak użytkowników spełniających kryteria.
+                    {t('similar.no_results')}
                 </div>
             )}
 
             {results.length > 0 && (
                 <>
                     <div style={{ fontSize: '13px', color: '#888', marginBottom: '10px' }}>
-                        Znaleziono {results.length} użytkowników — kliknij żeby zobaczyć rekomendacje:
+                        {t('similar.found')} {results.length} {t('similar.found_suffix')}
                     </div>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                         {results.map(u => {
-                            const label = getRatingStyle(u.avgRating)
+                            const label = getRatingStyle(u.avgRating, t)
                             const score10 = Math.round(u.avgRating * 2)
                             return (
                                 <button key={u.userId} onClick={() => onSelectUser(u.userId)}
@@ -183,22 +151,21 @@ export default function SimilarUsersFilter({ API, onSelectUser }) {
                                     }}
                                 >
                                     <div style={{ fontWeight: '700', color: '#333', marginBottom: '2px' }}>
-                                        Użytkownik #{u.userId}
+                                        {t('similar.user_prefix')}{u.userId}
                                     </div>
                                     <div style={{ color: '#555', fontSize: '12px', marginBottom: '4px' }}>
-                                        {u.gender === 'M' ? '👨' : '👩'} {AGE_LABELS[u.age]}
-                                        · {OCC_LABELS[u.occupation]}
+                                        {u.gender === 'M' ? '👨' : '👩'} {t('age', u.age)}
+                                        · {t('occupation', u.occupation)}
                                     </div>
                                     <div style={{ fontSize: '12px', marginBottom: '4px' }}>
-                                        <span style={{ color: '#888' }}>Ocen: </span>
+                                        <span style={{ color: '#888' }}>{t('similar.ratings_label')} </span>
                                         <span style={{ color: '#333', fontWeight: '600' }}>{u.ratingsCount}</span>
                                     </div>
                                     <div style={{ fontSize: '12px' }}>
-                                        <span style={{ color: '#888' }}>Styl oceniania: </span>
+                                        <span style={{ color: '#888' }}>{t('similar.style_label')} </span>
                                         <Tooltip text={label.desc}>
                                             <span style={{
-                                                color: label.color,
-                                                fontWeight: '600',
+                                                color: label.color, fontWeight: '600',
                                                 borderBottom: `1px dashed ${label.color}`,
                                                 cursor: 'help'
                                             }}>
@@ -206,7 +173,6 @@ export default function SimilarUsersFilter({ API, onSelectUser }) {
                                             </span>
                                         </Tooltip>
                                     </div>
-                                    {/* pasek */}
                                     <div style={{
                                         marginTop: '6px', background: '#f0f0f0',
                                         borderRadius: '4px', height: '4px', overflow: 'hidden'

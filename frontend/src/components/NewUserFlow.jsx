@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import axios from 'axios'
 import RecommendationCard from './RecommendationCard'
+import { useLang } from '../LangContext'
 
 const SAMPLE_MOVIES = [
     { movieId: 1, title: 'Toy Story (1995)', genres: 'Animation|Children\'s|Comedy' },
@@ -25,28 +26,8 @@ const SAMPLE_MOVIES = [
     { movieId: 3578, title: 'Gladiator (2000)', genres: 'Action|Drama' }
 ]
 
-const AGE_OPTIONS = [
-    { value: 1, label: 'Poniżej 18' }, { value: 18, label: '18–24' },
-    { value: 25, label: '25–34' }, { value: 35, label: '35–44' },
-    { value: 45, label: '45–49' }, { value: 50, label: '50–55' },
-    { value: 56, label: '56+' }
-]
-
-const OCC_OPTIONS = [
-    { value: 0, label: 'other' }, { value: 1, label: 'educator' },
-    { value: 2, label: 'artist' }, { value: 3, label: 'clerical/admin' },
-    { value: 4, label: 'student' }, { value: 5, label: 'customer service' },
-    { value: 6, label: 'doctor' }, { value: 7, label: 'executive' },
-    { value: 8, label: 'farmer' }, { value: 9, label: 'homemaker' },
-    { value: 10, label: 'K-12 student' }, { value: 11, label: 'lawyer' },
-    { value: 12, label: 'programmer' }, { value: 13, label: 'retired' },
-    { value: 14, label: 'sales' }, { value: 15, label: 'scientist' },
-    { value: 16, label: 'self-employed' }, { value: 17, label: 'technician' },
-    { value: 18, label: 'tradesman' }, { value: 19, label: 'unemployed' },
-    { value: 20, label: 'writer' }
-]
-
 export default function NewUserFlow({ API }) {
+    const { t } = useLang()
     const [step, setStep] = useState(1)
     const [gender, setGender] = useState('M')
     const [age, setAge] = useState(25)
@@ -56,6 +37,9 @@ export default function NewUserFlow({ API }) {
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState(null)
     const [activePanel, setActivePanel] = useState('linear')
+
+    const AGE_OPTIONS = [1, 18, 25, 35, 45, 50, 56]
+    const OCC_OPTIONS = Array.from({ length: 21 }, (_, i) => i)
 
     const ratedCount = Object.keys(ratings).length
 
@@ -108,7 +92,7 @@ export default function NewUserFlow({ API }) {
         background: 'white', minWidth: '180px'
     }
 
-    const panelBtn = (key, label) => ({
+    const panelBtn = (key) => ({
         padding: '8px 20px',
         background: activePanel === key ? '#4a90d9' : '#eee',
         color: activePanel === key ? 'white' : '#666',
@@ -118,18 +102,15 @@ export default function NewUserFlow({ API }) {
 
     return (
         <div>
-            {/* krok 1 — profil demograficzny */}
+            {/* krok 1 */}
             {step === 1 && (
                 <div style={{ maxWidth: '600px', margin: '0 auto' }}>
-                    <h2 style={{ marginBottom: '8px' }}>👤 Krok 1 — Twój profil</h2>
-                    <p style={{ color: '#666', marginBottom: '24px' }}>
-                        Podaj dane demograficzne — model użyje ich jako dodatkowych cech predykcji.
-                        Wszystkie pola są opcjonalne.
-                    </p>
+                    <h2 style={{ marginBottom: '8px' }}>👤 {t('new_user.step1_title')}</h2>
+                    <p style={{ color: '#666', marginBottom: '24px' }}>{t('new_user.step1_desc')}</p>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                         <div>
-                            <div style={{ fontSize: '13px', color: '#888', marginBottom: '6px' }}>Płeć</div>
+                            <div style={{ fontSize: '13px', color: '#888', marginBottom: '6px' }}>{t('profile.gender')}</div>
                             <div style={{ display: 'flex', gap: '10px' }}>
                                 {['M', 'F'].map(g => (
                                     <button key={g} onClick={() => setGender(g)}
@@ -137,30 +118,28 @@ export default function NewUserFlow({ API }) {
                                             padding: '10px 24px',
                                             background: gender === g ? '#4a90d9' : '#eee',
                                             color: gender === g ? 'white' : '#666',
-                                            border: 'none', borderRadius: '8px', cursor: 'pointer',
-                                            fontSize: '15px'
+                                            border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '15px'
                                         }}>
-                                        {g === 'M' ? '👨 Mężczyzna' : '👩 Kobieta'}
+                                        {t('gender', g === 'M' ? 'M_icon' : 'F_icon')}
                                     </button>
                                 ))}
                             </div>
                         </div>
 
                         <div>
-                            <div style={{ fontSize: '13px', color: '#888', marginBottom: '6px' }}>Wiek</div>
+                            <div style={{ fontSize: '13px', color: '#888', marginBottom: '6px' }}>{t('profile.age')}</div>
                             <select value={age} onChange={e => setAge(e.target.value)} style={inputStyle}>
-                                {AGE_OPTIONS.map(o => (
-                                    <option key={o.value} value={o.value}>{o.label}</option>
+                                {AGE_OPTIONS.map(v => (
+                                    <option key={v} value={v}>{t('age', v)}</option>
                                 ))}
                             </select>
                         </div>
 
                         <div>
-                            <div style={{ fontSize: '13px', color: '#888', marginBottom: '6px' }}>Zawód</div>
-                            <select value={occupation} onChange={e => setOccupation(e.target.value)}
-                                style={inputStyle}>
-                                {OCC_OPTIONS.map(o => (
-                                    <option key={o.value} value={o.value}>{o.label}</option>
+                            <div style={{ fontSize: '13px', color: '#888', marginBottom: '6px' }}>{t('profile.occupation')}</div>
+                            <select value={occupation} onChange={e => setOccupation(e.target.value)} style={inputStyle}>
+                                {OCC_OPTIONS.map(v => (
+                                    <option key={v} value={v}>{t('occupation', v)}</option>
                                 ))}
                             </select>
                         </div>
@@ -169,30 +148,27 @@ export default function NewUserFlow({ API }) {
                             style={{
                                 padding: '12px 32px', background: '#4a90d9', color: 'white',
                                 border: 'none', borderRadius: '8px', cursor: 'pointer',
-                                fontSize: '15px', fontWeight: '600', alignSelf: 'flex-start',
-                                marginTop: '8px'
+                                fontSize: '15px', fontWeight: '600', alignSelf: 'flex-start', marginTop: '8px'
                             }}>
-                            Dalej → Oceń filmy
+                            {t('new_user.next_rate')}
                         </button>
                     </div>
                 </div>
             )}
 
-            {/* krok 2 — ocenianie filmów */}
+            {/* krok 2 */}
             {step === 2 && (
                 <div>
                     <div style={{
                         display: 'flex', justifyContent: 'space-between',
                         alignItems: 'center', marginBottom: '8px'
                     }}>
-                        <h2 style={{ margin: 0 }}>🎬 Krok 2 — Oceń filmy</h2>
+                        <h2 style={{ margin: 0 }}>🎬 {t('new_user.step2_title')}</h2>
                         <div style={{ fontSize: '14px', color: ratedCount >= 3 ? '#2ecc71' : '#888' }}>
-                            {ratedCount >= 3 ? '✅' : '⏳'} Oceniono: {ratedCount} / min. 3
+                            {ratedCount >= 3 ? '✅' : '⏳'} {t('new_user.rated')}: {ratedCount} / {t('new_user.min_ratings')}
                         </div>
                     </div>
-                    <p style={{ color: '#666', marginBottom: '20px' }}>
-                        Oceń co najmniej 3 filmy które znasz — to pozwoli modelowi zrozumieć Twoje preferencje.
-                    </p>
+                    <p style={{ color: '#666', marginBottom: '20px' }}>{t('new_user.step2_desc')}</p>
 
                     <div style={{
                         display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))',
@@ -243,7 +219,7 @@ export default function NewUserFlow({ API }) {
                                 padding: '10px 20px', background: '#eee', color: '#666',
                                 border: 'none', borderRadius: '8px', cursor: 'pointer'
                             }}>
-                            ← Wróć
+                            ← {t('new_user.back')}
                         </button>
                         <button onClick={handleSubmit}
                             disabled={ratedCount < 3 || loading}
@@ -254,102 +230,92 @@ export default function NewUserFlow({ API }) {
                                 cursor: ratedCount >= 3 ? 'pointer' : 'not-allowed',
                                 fontSize: '15px', fontWeight: '600'
                             }}>
-                            {loading ? '⏳ Generowanie...' : '🎯 Generuj rekomendacje'}
+                            {loading ? `⏳ ${t('new_user.generating')}` : `🎯 ${t('new_user.generate')}`}
                         </button>
                     </div>
 
                     {error && (
-                        <div style={{ marginTop: '12px', color: '#c00', fontSize: '14px' }}>
-                            ⚠️ {error}
-                        </div>
+                        <div style={{ marginTop: '12px', color: '#c00', fontSize: '14px' }}>⚠️ {error}</div>
                     )}
                 </div>
             )}
 
-            {/* krok 3 — wyniki */}
+            {/* krok 3 */}
             {step === 3 && results && (
                 <div>
                     <div style={{
                         display: 'flex', justifyContent: 'space-between',
                         alignItems: 'center', marginBottom: '20px'
                     }}>
-                        <h2 style={{ margin: 0 }}>🎉 Twoje rekomendacje</h2>
+                        <h2 style={{ margin: 0 }}>🎉 {t('new_user.step3_title')}</h2>
                         <button onClick={handleReset}
                             style={{
                                 padding: '8px 20px', background: '#eee', color: '#666',
                                 border: 'none', borderRadius: '8px', cursor: 'pointer'
                             }}>
-                            ↺ Zacznij od nowa
+                            ↺ {t('new_user.reset')}
                         </button>
                     </div>
 
-                    {/* profil */}
                     <div style={{
                         background: '#f8f9fa', borderRadius: '10px',
                         padding: '16px', marginBottom: '20px',
                         display: 'flex', gap: '24px', flexWrap: 'wrap'
                     }}>
                         <div>
-                            <div style={{ fontSize: '12px', color: '#888' }}>Płeć</div>
-                            <div>{results.user_profile.gender === 'M' ? '👨 Mężczyzna' : '👩 Kobieta'}</div>
+                            <div style={{ fontSize: '12px', color: '#888' }}>{t('profile.gender')}</div>
+                            <div>{t('gender', results.user_profile.gender === 'M' ? 'M_icon' : 'F_icon')}</div>
                         </div>
                         <div>
-                            <div style={{ fontSize: '12px', color: '#888' }}>Ocenionych filmów</div>
+                            <div style={{ fontSize: '12px', color: '#888' }}>{t('new_user.rated')}</div>
                             <div>🎬 {results.user_profile.ratingsGiven}</div>
                         </div>
                         <div>
-                            <div style={{ fontSize: '12px', color: '#888' }}>Średnia ocena</div>
+                            <div style={{ fontSize: '12px', color: '#888' }}>{t('new_user.avg_rating')}</div>
                             <div>⭐ {results.user_profile.avgRating}</div>
                         </div>
                         <div>
-                            <div style={{ fontSize: '12px', color: '#888' }}>Optymalny próg</div>
+                            <div style={{ fontSize: '12px', color: '#888' }}>{t('new_user.threshold')}</div>
                             <div>🎯 {results.optimal_threshold}</div>
                         </div>
                     </div>
 
-                    {/* przełącznik paneli */}
                     <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
-                        <button style={panelBtn('linear', '📈 Regresja liniowa')}
-                            onClick={() => setActivePanel('linear')}>
-                            📈 Regresja liniowa
+                        <button style={panelBtn('linear')} onClick={() => setActivePanel('linear')}>
+                            📈 {t('new_user.panel_linear')}
                         </button>
-                        <button style={panelBtn('logistic', '🎯 Regresja logistyczna')}
-                            onClick={() => setActivePanel('logistic')}>
-                            🎯 Regresja logistyczna
+                        <button style={panelBtn('logistic')} onClick={() => setActivePanel('logistic')}>
+                            🎯 {t('new_user.panel_logistic')}
                         </button>
-                        <button style={panelBtn('combined', '⚡ Połączony')}
-                            onClick={() => setActivePanel('combined')}>
-                            ⚡ Połączony
+                        <button style={panelBtn('combined')} onClick={() => setActivePanel('combined')}>
+                            ⚡ {t('new_user.panel_combined')}
                         </button>
                     </div>
 
-                    {/* rekomendacje */}
                     {activePanel === 'linear' && (
                         <div>
                             <p style={{ color: '#666', fontSize: '14px', marginBottom: '16px' }}>
-                                Przewidywana ocena (1–5) na podstawie Twoich preferencji.
+                                {t('recommendations.linear_desc')}
                             </p>
                             {results.linear.map((rec, i) => (
                                 <RecommendationCard key={rec.movieId} rank={i + 1} rec={rec} type="linear" />
                             ))}
                         </div>
                     )}
-
                     {activePanel === 'logistic' && (
                         <div>
                             <p style={{ color: '#666', fontSize: '14px', marginBottom: '16px' }}>
-                                Prawdopodobieństwo że polubisz film (próg: {results.optimal_threshold}).
+                                {t('new_user.threshold_desc')} ({results.optimal_threshold})
                             </p>
                             {results.logistic.map((rec, i) => (
                                 <RecommendationCard key={rec.movieId} rank={i + 1} rec={rec} type="logistic" />
                             ))}
                         </div>
                     )}
-
                     {activePanel === 'combined' && (
                         <div>
                             <p style={{ color: '#666', fontSize: '14px', marginBottom: '16px' }}>
-                                Wynik łączony: 50% regresja liniowa + 50% regresja logistyczna.
+                                {t('new_user.combined_desc')}
                             </p>
                             {results.combined.map((rec, i) => (
                                 <RecommendationCard key={rec.movieId} rank={i + 1}
