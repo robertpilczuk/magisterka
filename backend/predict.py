@@ -116,7 +116,7 @@ def get_validation(userId, ratings, movies, users):
         vec = build_feature_vector(user_row, row, user_avg, m_avg, m_count)
         vectors.append(vec)
 
-    X = scaler.transform(np.array(vectors))
+    X = scaler.transform(pd.DataFrame(vectors, columns=FEATURE_COLS))
     predicted = np.clip(lr.predict(X), 1.0, 5.0)
     actual = user_ratings["rating"].values
 
