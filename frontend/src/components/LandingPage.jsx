@@ -151,14 +151,25 @@ function AboutSection({ t }) {
 }
 
 export default function LandingPage({ onSelect }) {
-    const { t } = useLang()
+    const { t, lang, setLang } = useLang()
 
     return (
+
         <div style={{
             minHeight: '100vh',
             background: 'linear-gradient(135deg, #f8f9fa 0%, #e8f4fd 100%)',
             padding: '48px 24px',
         }}>
+            <div style={{ position: 'fixed', top: '16px', right: '16px', zIndex: 1000 }}>
+                <button onClick={() => setLang(lang === 'PL' ? 'EN' : 'PL')} style={{
+                    padding: '6px 14px', borderRadius: '20px',
+                    border: '2px solid #333', background: 'white',
+                    cursor: 'pointer', fontSize: '13px', fontWeight: '700',
+                    color: '#333', boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+                }}>
+                    {lang === 'PL' ? '🇬🇧 EN' : '🇵🇱 PL'}
+                </button>
+            </div>
             {/* hero */}
             <div style={{ textAlign: 'center', maxWidth: '720px', margin: '0 auto 56px' }}>
                 <div style={{ fontSize: '48px', marginBottom: '16px' }}>🎓</div>

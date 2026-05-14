@@ -3,6 +3,13 @@
 
 const translations = {
     PL: {
+        app_title: '🎬 Film Recommender',
+        app_subtitle: 'Predykcja doboru treści audiowizualnych — regresja liniowa vs logistyczna',
+        loading_recs: 'Generowanie rekomendacji...',
+        linear_title: 'Regresja liniowa',
+        linear_desc: 'Przewidywana ocena (1–5)',
+        logistic_title: 'Regresja logistyczna',
+        logistic_desc: 'Prawdopodobieństwo polubienia (%)',
         // nawigacja
         nav: {
             title: 'Film Recommender',
@@ -10,6 +17,7 @@ const translations = {
             tab_existing: 'Użytkownik z bazy',
             tab_new: 'Moje rekomendacje',
             tab_deep: 'Pogłębiona analiza',
+            tab_about: 'O projekcie',
         },
 
         // wyszukiwanie
@@ -380,16 +388,43 @@ const translations = {
             label: 'Liczba rekomendacji',
             hint: 'Przesuń żeby zmienić liczbę wyświetlanych rekomendacji',
         },
+        about: {
+            title: 'O projekcie',
+            subtitle: 'Praca magisterska — Informatyka, specjalność Programowanie i Analiza Danych',
+            university: 'WSEI Lublin',
+            methodology_title: 'Metodologia',
+            methodology_desc: 'System wykorzystuje dwa modele uczenia maszynowego — regresję liniową i logistyczną — do predykcji preferencji użytkowników. Modele trenowane są na rzeczywistych danych ocen i porównywane pod kątem skuteczności.',
+            models_title: 'Modele',
+            metrics_title: 'Metryki jakości',
+            rmse_desc: 'Średni błąd predykcji — im niższy tym lepiej',
+            mae_desc: 'Średnia bezwzględna różnica ocen — im niższa tym lepiej',
+            r2_desc: 'Współczynnik determinacji — jaki % zmienności model wyjaśnia',
+            datasets_title: 'Datasety',
+            tech_title: 'Stack technologiczny',
+            linear_desc: 'Przewiduje ocenę numeryczną (1–5 dla filmów, 1–10 dla książek). Prosta, interpretatywna metoda regresji.',
+            logistic_desc: 'Klasyfikuje czy użytkownik "polubi" pozycję (binarnie). Optymalizowany próg decyzyjny zamiast domyślnego 0.5.',
+            movies_dataset_desc: 'MovieLens 1M — 1 000 209 ocen, 6 040 użytkowników, 3 883 filmy. Podział temporalny per-user.',
+            books_dataset_desc: 'Book-Crossing — 96 059 ocen (po filtracji min. 20 ocen/user), 3 419 użytkowników, 13 599 książek.',
+        },
 
     },
 
     EN: {
+        app_title: '🎬 Film Recommender',
+        app_subtitle: 'Audiovisual content prediction — linear vs logistic regression',
+        loading_recs: 'Generating recommendations...',
+        linear_title: 'Linear Regression',
+        linear_desc: 'Predicted rating (1–5)',
+        logistic_title: 'Logistic Regression',
+        logistic_desc: 'Probability of liking (%)',
+
         nav: {
             title: 'Film Recommender',
             subtitle: 'Audiovisual content prediction — linear vs logistic regression',
             tab_existing: 'Database User',
             tab_new: 'My Recommendations',
             tab_deep: 'Deep Analysis',
+            tab_about: 'About',
         },
 
         search: {
@@ -746,7 +781,24 @@ const translations = {
             label: 'Number of recommendations',
             hint: 'Slide to change the number of displayed recommendations',
         },
-
+        about: {
+            title: 'About the project',
+            subtitle: "Master's Thesis — Computer Science, Programming and Data Analysis",
+            university: 'WSEI Lublin',
+            methodology_title: 'Methodology',
+            methodology_desc: 'The system uses two machine learning models — linear and logistic regression — to predict user preferences. Models are trained on real rating data and compared for effectiveness.',
+            models_title: 'Models',
+            metrics_title: 'Quality metrics',
+            rmse_desc: 'Average prediction error — lower is better',
+            mae_desc: 'Average absolute rating difference — lower is better',
+            r2_desc: 'Coefficient of determination — what % of variance the model explains',
+            datasets_title: 'Datasets',
+            tech_title: 'Tech stack',
+            linear_desc: 'Predicts a numerical rating (1–5 for films, 1–10 for books). Simple, interpretable regression method.',
+            logistic_desc: 'Classifies whether a user will "like" an item (binary). Optimized decision threshold instead of default 0.5.',
+            movies_dataset_desc: 'MovieLens 1M — 1,000,209 ratings, 6,040 users, 3,883 films. Per-user temporal split.',
+            books_dataset_desc: 'Book-Crossing — 96,059 ratings (after filtering min. 20 ratings/user), 3,419 users, 13,599 books.',
+        },
     },
 }
 
