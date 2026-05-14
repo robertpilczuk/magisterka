@@ -410,6 +410,9 @@ const translations = {
             title: 'Ostatnio przeglądane',
             clear: 'Wyczyść',
         },
+        export_csv: 'Eksportuj CSV',
+        export_csv_linear: 'Pobierz CSV (liniowa)',
+        export_csv_logistic: 'Pobierz CSV (logistyczna)',
 
     },
 
@@ -807,6 +810,9 @@ const translations = {
             title: 'Recently viewed',
             clear: 'Clear',
         },
+        export_csv: 'Export CSV',
+        export_csv_linear: 'Download CSV (linear)',
+        export_csv_logistic: 'Download CSV (logistic)',
     },
 }
 

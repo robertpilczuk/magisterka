@@ -102,6 +102,26 @@ export default function App() {
     }
   }
 
+  function exportCSV(recs, type) {
+    const header = type === 'linear'
+      ? 'rank,title,genres,predicted_rating'
+      : 'rank,title,genres,like_probability'
+    const rows = recs.map((r, i) => {
+      const score = type === 'linear'
+        ? r.predicted_rating.toFixed(2)
+        : (r.like_probability * 100).toFixed(1) + '%'
+      return `${i + 1},"${r.title}","${r.genres}",${score}`
+    })
+    const csv = [header, ...rows].join('\n')
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `recommendations_${type}_user${userId}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
   const tabStyle = (tab) => ({
     padding: '12px 32px', fontSize: '15px', fontWeight: '600',
     border: 'none',
@@ -303,9 +323,17 @@ export default function App() {
               {/* dwa panele rekomendacji */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginTop: '24px' }}>
                 <div>
-                  <h2 style={{ borderBottom: '2px solid #4a90d9', paddingBottom: '8px' }}>
-                    📈 {t('nav.linear_title')}
-                  </h2>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #4a90d9', paddingBottom: '8px', marginBottom: '0' }}>
+                    <h2 style={{ margin: 0 }}>📈 {t('nav.linear_title')}</h2>
+                    <button onClick={() => exportCSV(filterByGenre(recsLinear), 'linear')}
+                      style={{
+                        padding: '6px 12px', background: '#e8f4fd', color: '#4a90d9',
+                        border: '1px solid #4a90d9', borderRadius: '8px',
+                        cursor: 'pointer', fontSize: '12px', fontWeight: '600'
+                      }}>
+                      ⬇️ {t('export_csv')}
+                    </button>
+                  </div>
                   <p style={{ color: '#666', fontSize: '14px', marginBottom: '16px' }}>
                     {t('nav.linear_desc')}
                   </p>
@@ -314,9 +342,17 @@ export default function App() {
                   ))}
                 </div>
                 <div>
-                  <h2 style={{ borderBottom: '2px solid #e87040', paddingBottom: '8px' }}>
-                    🎯 {t('nav.logistic_title')}
-                  </h2>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #e87040', paddingBottom: '8px', marginBottom: '0' }}>
+                    <h2 style={{ margin: 0 }}>🎯 {t('nav.logistic_title')}</h2>
+                    <button onClick={() => exportCSV(filterByGenre(recsLogistic), 'logistic')}
+                      style={{
+                        padding: '6px 12px', background: '#fff0ea', color: '#e87040',
+                        border: '1px solid #e87040', borderRadius: '8px',
+                        cursor: 'pointer', fontSize: '12px', fontWeight: '600'
+                      }}>
+                      ⬇️ {t('export_csv')}
+                    </button>
+                  </div>
                   <p style={{ color: '#666', fontSize: '14px', marginBottom: '16px' }}>
                     {t('nav.logistic_desc')}
                   </p>
