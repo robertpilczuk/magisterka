@@ -35,6 +35,21 @@ export default function App() {
   const [excludedProfileGenres, setExcludedProfileGenres] = useState([])
   const [topN, setTopN] = useState(10)
 
+  const [searchHistory, setSearchHistory] = useState(() => {
+    try {
+      return JSON.parse(sessionStorage.getItem('searchHistory') || '[]')
+    } catch { return [] }
+  })
+
+  function addToHistory(id) {
+    setSearchHistory(prev => {
+      const filtered = prev.filter(x => x !== id)
+      const next = [id, ...filtered].slice(0, 8)
+      sessionStorage.setItem('searchHistory', JSON.stringify(next))
+      return next
+    })
+  }
+
   const [compareUserId, setCompareUserId] = useState('')
   const [comparison, setComparison] = useState(null)
   const [compareLoading, setCompareLoading] = useState(false)
@@ -56,6 +71,7 @@ export default function App() {
         axios.get(`${API}/user-taste/${id}`)
       ])
       setUserId(id)
+      addToHistory(id)
       setUserProfile(profile.data)
       setRecsLinear(linear.data.recommendations)
       setRecsLogistic(logistic.data.recommendations)
@@ -192,6 +208,37 @@ export default function App() {
       {activeTab === 'existing' && (
         <>
           <SearchBar onSearch={fetchAll} />
+          {searchHistory.length > 0 && (
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: '8px',
+              flexWrap: 'wrap', marginBottom: '16px'
+            }}>
+              <span style={{ fontSize: '13px', color: '#888' }}>
+                {t('history.title')}:
+              </span>
+              {searchHistory.map(id => (
+                <button key={id} onClick={() => fetchAll(id)}
+                  style={{
+                    padding: '4px 12px', background: '#e8f4fd',
+                    color: '#4a90d9', border: '1px solid #4a90d9',
+                    borderRadius: '20px', cursor: 'pointer',
+                    fontSize: '13px', fontWeight: '600'
+                  }}>
+                  #{id}
+                </button>
+              ))}
+              <button onClick={() => {
+                setSearchHistory([])
+                sessionStorage.removeItem('searchHistory')
+              }} style={{
+                padding: '4px 10px', background: '#eee', color: '#888',
+                border: 'none', borderRadius: '20px', cursor: 'pointer',
+                fontSize: '12px'
+              }}>
+                ✕ {t('history.clear')}
+              </button>
+            </div>
+          )}
           <SimilarUsersFilter API={API} onSelectUser={fetchAll} />
 
           {error && (
