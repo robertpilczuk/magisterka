@@ -1,14 +1,28 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from data_loader import load_data
+from pydantic import BaseModel
+from typing import List, Optional
 import pandas as pd
+import random
+
+from data_loader import load_data
 from predict import (
     get_recommendations,
     get_validation,
     get_recommendations_logistic,
+    get_similar_users,
+    get_new_user_recommendations,
+    get_user_comparison,
+    get_user_taste_profile,
     get_recommendation_explanation,
 )
-import random
+from data_loader_books import load_books_data
+from predict_books import (
+    get_book_recommendations,
+    get_book_recommendations_logistic,
+    get_book_validation,
+    get_new_user_book_recommendations,
+)
 
 app = FastAPI(title="Film Recommender API")
 
@@ -19,38 +33,69 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# wczytaj dane raz przy starcie
-print("Wczytywanie danych...")
+# ─── wczytaj dane filmowe ─────────────────────────────────────────────────────
+print("Wczytywanie danych filmowych...")
 ratings, movies, users = load_data()
 print(
     f"Dane wczytane: {len(ratings)} ocen, {len(movies)} filmów, {len(users)} użytkowników"
 )
+print("Obliczanie statystyk filmów...")
+movie_stats_cache = ratings.groupby("movieId")["rating"].agg(["mean", "count"])
+print("Statystyki filmów gotowe.")
+
+# ─── wczytaj dane książkowe ───────────────────────────────────────────────────
+print("Wczytywanie danych książkowych...")
+books_ratings, books_books, books_users = load_books_data()
+print("Obliczanie statystyk książek...")
+books_stats_cache = books_ratings.groupby("isbn")["rating"].agg(["mean", "count"])
+print("Statystyki książek gotowe.")
 
 
+# ─── Pydantic models ──────────────────────────────────────────────────────────
+class UserRating(BaseModel):
+    movieId: int
+    rating: float
+
+
+class NewUserRequest(BaseModel):
+    ratings: List[UserRating]
+    age: Optional[int] = 25
+    gender: Optional[str] = "M"
+    occupation: Optional[int] = 4
+
+
+class BookUserRating(BaseModel):
+    isbn: str
+    rating: float
+
+
+class NewBookUserRequest(BaseModel):
+    ratings: List[BookUserRating]
+    age: Optional[int] = 25
+
+
+# ─── helpers ──────────────────────────────────────────────────────────────────
+def _check_user(userId: int):
+    if userId not in users["userId"].values:
+        raise HTTPException(status_code=404, detail=f"Użytkownik {userId} nie istnieje")
+
+
+def _check_book_user(userId: int):
+    if userId not in books_ratings["userId"].values:
+        raise HTTPException(
+            status_code=404, detail=f"User {userId} not found in books dataset"
+        )
+
+
+# ─── FILMS ────────────────────────────────────────────────────────────────────
 @app.get("/")
 def root():
     return {"status": "ok", "message": "Film Recommender API działa"}
 
 
-@app.get("/recommend/{userId}")
-def recommend(userId: int, top_n: int = 10):
-    if userId not in users["userId"].values:
-        raise HTTPException(status_code=404, detail=f"Użytkownik {userId} nie istnieje")
-    results = get_recommendations(userId, ratings, movies, users, top_n)
-    return {"userId": userId, "recommendations": results}
-
-
-@app.get("/validate/{userId}")
-def validate(userId: int):
-    if userId not in users["userId"].values:
-        raise HTTPException(status_code=404, detail=f"Użytkownik {userId} nie istnieje")
-    return get_validation(userId, ratings, movies, users)
-
-
 @app.get("/user/{userId}")
 def user_info(userId: int):
-    if userId not in users["userId"].values:
-        raise HTTPException(status_code=404, detail=f"Użytkownik {userId} nie istnieje")
+    _check_user(userId)
     user = users[users["userId"] == userId].iloc[0]
     user_ratings = ratings[ratings["userId"] == userId]
     return {
@@ -63,36 +108,28 @@ def user_info(userId: int):
     }
 
 
-@app.get("/recommend-logistic/{userId}")
-def recommend_logistic(userId: int, top_n: int = 10):
-    if userId not in users["userId"].values:
-        raise HTTPException(status_code=404, detail=f"Użytkownik {userId} nie istnieje")
-    results = get_recommendations_logistic(userId, ratings, movies, users, top_n)
+@app.get("/recommend/{userId}")
+def recommend(userId: int, top_n: int = 10):
+    _check_user(userId)
+    results = get_recommendations(
+        userId, ratings, movies, users, top_n, movie_stats=movie_stats_cache
+    )
     return {"userId": userId, "recommendations": results}
 
 
-from predict import (
-    get_recommendations,
-    get_validation,
-    get_recommendations_logistic,
-    get_similar_users,
-    get_new_user_recommendations,
-    get_user_comparison,
-)
-from pydantic import BaseModel
-from typing import List, Optional
+@app.get("/recommend-logistic/{userId}")
+def recommend_logistic(userId: int, top_n: int = 10):
+    _check_user(userId)
+    results = get_recommendations_logistic(
+        userId, ratings, movies, users, top_n, movie_stats=movie_stats_cache
+    )
+    return {"userId": userId, "recommendations": results}
 
 
-class UserRating(BaseModel):
-    movieId: int
-    rating: float
-
-
-class NewUserRequest(BaseModel):
-    ratings: List[UserRating]
-    age: Optional[int] = 25
-    gender: Optional[str] = "M"
-    occupation: Optional[int] = 4
+@app.get("/validate/{userId}")
+def validate(userId: int):
+    _check_user(userId)
+    return get_validation(userId, ratings, movies, users, movie_stats=movie_stats_cache)
 
 
 @app.get("/similar-users")
@@ -118,62 +155,27 @@ def recommend_new_user(request: NewUserRequest):
 @app.get("/compare-users/{userId1}/{userId2}")
 def compare_users(userId1: int, userId2: int):
     for uid in [userId1, userId2]:
-        if uid not in users["userId"].values:
-            raise HTTPException(
-                status_code=404, detail=f"Użytkownik {uid} nie istnieje"
-            )
-    return get_user_comparison(userId1, userId2, ratings, movies, users)
-
-
-from predict import (
-    get_recommendations,
-    get_validation,
-    get_recommendations_logistic,
-    get_similar_users,
-    get_new_user_recommendations,
-    get_user_comparison,
-    get_user_taste_profile,
-)
+        _check_user(uid)
+    return get_user_comparison(
+        userId1, userId2, ratings, movies, users, movie_stats=movie_stats_cache
+    )
 
 
 @app.get("/user-taste/{userId}")
 def user_taste(userId: int):
-    if userId not in users["userId"].values:
-        raise HTTPException(status_code=404, detail=f"Użytkownik {userId} nie istnieje")
+    _check_user(userId)
     return get_user_taste_profile(userId, ratings, movies)
 
 
-# ─── BOOKS ───────────────────────────────────────────────────────────────────
-from data_loader_books import load_books_data
-from predict_books import (
-    get_book_recommendations,
-    get_book_recommendations_logistic,
-    get_book_validation,
-    get_new_user_book_recommendations,
-)
-
-print("Wczytywanie danych książkowych...")
-books_ratings, books_books, books_users = load_books_data()
+@app.get("/explain/{userId}/{movieId}")
+def explain(userId: int, movieId: int):
+    _check_user(userId)
+    return get_recommendation_explanation(
+        userId, movieId, ratings, movies, users, movie_stats=movie_stats_cache
+    )
 
 
-class BookUserRating(BaseModel):
-    isbn: str
-    rating: float
-
-
-class NewBookUserRequest(BaseModel):
-    ratings: List[BookUserRating]
-    age: Optional[int] = 25
-
-
-def _check_book_user(userId: int):
-    if userId not in books_ratings["userId"].values:
-        raise HTTPException(
-            status_code=404,
-            detail=f"User {userId} not found in books dataset",
-        )
-
-
+# ─── BOOKS ────────────────────────────────────────────────────────────────────
 @app.get("/books/user/{userId}")
 def books_user_info(userId: int):
     _check_book_user(userId)
@@ -193,7 +195,12 @@ def books_user_info(userId: int):
 def books_recommend(userId: int, top_n: int = 10):
     _check_book_user(userId)
     results = get_book_recommendations(
-        userId, books_ratings, books_books, books_users, top_n
+        userId,
+        books_ratings,
+        books_books,
+        books_users,
+        top_n,
+        book_stats=books_stats_cache,
     )
     return {"userId": userId, "recommendations": results}
 
@@ -202,7 +209,12 @@ def books_recommend(userId: int, top_n: int = 10):
 def books_recommend_logistic(userId: int, top_n: int = 10):
     _check_book_user(userId)
     results = get_book_recommendations_logistic(
-        userId, books_ratings, books_books, books_users, top_n
+        userId,
+        books_ratings,
+        books_books,
+        books_users,
+        top_n,
+        book_stats=books_stats_cache,
     )
     return {"userId": userId, "recommendations": results}
 
@@ -210,7 +222,9 @@ def books_recommend_logistic(userId: int, top_n: int = 10):
 @app.get("/books/validate/{userId}")
 def books_validate(userId: int):
     _check_book_user(userId)
-    return get_book_validation(userId, books_ratings, books_books, books_users)
+    return get_book_validation(
+        userId, books_ratings, books_books, books_users, book_stats=books_stats_cache
+    )
 
 
 @app.post("/books/recommend-new-user")
@@ -246,7 +260,6 @@ def books_similar_users(
         return {"count": 0, "users": []}
 
     filtered = filtered.sort_values("ratingsCount", ascending=False).head(limit)
-
     return {
         "count": len(filtered),
         "users": [
@@ -264,13 +277,11 @@ def books_similar_users(
 @app.get("/books/user-taste/{userId}")
 def books_user_taste(userId: int):
     _check_book_user(userId)
-
     user_ratings = (
         books_ratings[books_ratings["userId"] == userId]
         .merge(books_books[["isbn", "title", "author"]], on="isbn")
         .sort_values("rating", ascending=False)
     )
-
     lubi = user_ratings[user_ratings["rating"] >= 8]
     srednie = user_ratings[user_ratings["rating"].between(5, 7)]
     slabe = user_ratings[user_ratings["rating"] <= 4]
@@ -298,10 +309,3 @@ def books_user_taste(userId: int):
 def books_random_user():
     available = books_ratings["userId"].unique().tolist()
     return {"userId": int(random.choice(available))}
-
-
-@app.get("/explain/{userId}/{movieId}")
-def explain(userId: int, movieId: int):
-    if userId not in users["userId"].values:
-        raise HTTPException(status_code=404, detail=f"User {userId} not found")
-    return get_recommendation_explanation(userId, movieId, ratings, movies, users)

@@ -27,32 +27,41 @@ def build_feature_vector(user_age, user_avg, book_avg, book_count, year):
     return [features.get(col, 0) for col in FEATURE_COLS]
 
 
-def get_book_recommendations(userId, ratings, books, users, top_n=10):
+def _get_book_stats(ratings, book_stats=None):
+    """Zwraca statystyki książek — z cache lub oblicza od nowa."""
+    if book_stats is not None:
+        return book_stats
+    return ratings.groupby("isbn")["rating"].agg(["mean", "count"])
+
+
+def get_book_recommendations(userId, ratings, books, users, top_n=10, book_stats=None):
     user_row = users[users["userId"] == userId].iloc[0]
     user_age = float(user_row["age"])
     user_avg = ratings[ratings["userId"] == userId]["rating"].mean()
 
     rated_isbns = set(ratings[ratings["userId"] == userId]["isbn"])
-    book_stats = ratings.groupby("isbn")["rating"].agg(["mean", "count"])
-    popular_isbns = set(book_stats.index)
+    bs = _get_book_stats(ratings, book_stats)
+    popular_isbns = set(bs.index)
 
     unrated = books[
         books["isbn"].isin(popular_isbns) & ~books["isbn"].isin(rated_isbns)
     ].copy()
 
-    vectors = []
-    for _, book_row in unrated.iterrows():
-        isbn = book_row["isbn"]
-        b_avg = book_stats.loc[isbn, "mean"]
-        b_count = book_stats.loc[isbn, "count"]
-        year = float(book_row["year"]) if pd.notna(book_row["year"]) else 1995.0
-        vectors.append(build_feature_vector(user_age, user_avg, b_avg, b_count, year))
+    # wektoryzacja — merge zamiast pętli
+    unrated = unrated.merge(
+        bs.rename(columns={"mean": "book_avg_rating", "count": "book_rating_count"}),
+        left_on="isbn",
+        right_index=True,
+        how="left",
+    )
+    unrated["age"] = user_age
+    unrated["user_avg_rating"] = user_avg
+    unrated["year"] = unrated["year"].fillna(1995.0)
 
-    X = pd.DataFrame(vectors, columns=FEATURE_COLS).fillna(0)
+    X = pd.DataFrame(unrated[FEATURE_COLS].fillna(0))
     X = scaler.transform(X)
     predicted = np.clip(lr.predict(X), 1.0, 10.0)
 
-    unrated = unrated.copy()
     unrated["predicted_rating"] = predicted
     top = unrated.nlargest(top_n, "predicted_rating")
     return top[["isbn", "title", "author", "predicted_rating"]].to_dict(
@@ -60,32 +69,36 @@ def get_book_recommendations(userId, ratings, books, users, top_n=10):
     )
 
 
-def get_book_recommendations_logistic(userId, ratings, books, users, top_n=10):
+def get_book_recommendations_logistic(
+    userId, ratings, books, users, top_n=10, book_stats=None
+):
     user_row = users[users["userId"] == userId].iloc[0]
     user_age = float(user_row["age"])
     user_avg = ratings[ratings["userId"] == userId]["rating"].mean()
 
     rated_isbns = set(ratings[ratings["userId"] == userId]["isbn"])
-    book_stats = ratings.groupby("isbn")["rating"].agg(["mean", "count"])
-    popular_isbns = set(book_stats.index)
+    bs = _get_book_stats(ratings, book_stats)
+    popular_isbns = set(bs.index)
 
     unrated = books[
         books["isbn"].isin(popular_isbns) & ~books["isbn"].isin(rated_isbns)
     ].copy()
 
-    vectors = []
-    for _, book_row in unrated.iterrows():
-        isbn = book_row["isbn"]
-        b_avg = book_stats.loc[isbn, "mean"]
-        b_count = book_stats.loc[isbn, "count"]
-        year = float(book_row["year"]) if pd.notna(book_row["year"]) else 1995.0
-        vectors.append(build_feature_vector(user_age, user_avg, b_avg, b_count, year))
+    # wektoryzacja — merge zamiast pętli
+    unrated = unrated.merge(
+        bs.rename(columns={"mean": "book_avg_rating", "count": "book_rating_count"}),
+        left_on="isbn",
+        right_index=True,
+        how="left",
+    )
+    unrated["age"] = user_age
+    unrated["user_avg_rating"] = user_avg
+    unrated["year"] = unrated["year"].fillna(1995.0)
 
-    X = pd.DataFrame(vectors, columns=FEATURE_COLS).fillna(0)
+    X = pd.DataFrame(unrated[FEATURE_COLS].fillna(0))
     X = scaler.transform(X)
     probabilities = log_reg.predict_proba(X)[:, 1]
 
-    unrated = unrated.copy()
     unrated["like_probability"] = probabilities
     top = unrated.nlargest(top_n, "like_probability")
     return (
@@ -95,7 +108,7 @@ def get_book_recommendations_logistic(userId, ratings, books, users, top_n=10):
     )
 
 
-def get_book_validation(userId, ratings, books, users):
+def get_book_validation(userId, ratings, books, users, book_stats=None):
     user_row = users[users["userId"] == userId].iloc[0]
     user_age = float(user_row["age"])
 
@@ -106,17 +119,14 @@ def get_book_validation(userId, ratings, books, users):
     if len(user_ratings) == 0:
         return {"userId": userId, "rmse": 0.0, "mae": 0.0, "count": 0, "samples": []}
 
-    user_ratings = ratings[ratings["userId"] == userId].merge(
-        books[["isbn", "title", "author"]], on="isbn"
-    )
     user_avg = user_ratings["rating"].mean()
-    book_stats = ratings.groupby("isbn")["rating"].agg(["mean", "count"])
+    bs = _get_book_stats(ratings, book_stats)
 
     vectors = []
     for _, row in user_ratings.iterrows():
         isbn = row["isbn"]
-        b_avg = book_stats.loc[isbn, "mean"] if isbn in book_stats.index else 5.0
-        b_count = book_stats.loc[isbn, "count"] if isbn in book_stats.index else 0
+        b_avg = bs.loc[isbn, "mean"] if isbn in bs.index else 5.0
+        b_count = bs.loc[isbn, "count"] if isbn in bs.index else 0
         vectors.append(build_feature_vector(user_age, user_avg, b_avg, b_count, 1995.0))
 
     X = pd.DataFrame(vectors, columns=FEATURE_COLS).fillna(0)
@@ -153,8 +163,8 @@ def get_new_user_book_recommendations(ratings_input, age=25, top_n=10):
     user_avg = np.mean([r["rating"] for r in ratings_input])
     user_age = float(age)
 
-    book_stats = ratings.groupby("isbn")["rating"].agg(["mean", "count"])
-    popular_isbns = set(book_stats.index)
+    bs = ratings.groupby("isbn")["rating"].agg(["mean", "count"])
+    popular_isbns = set(bs.index)
     unrated = books[
         books["isbn"].isin(popular_isbns) & ~books["isbn"].isin(rated_isbns)
     ].copy()
@@ -162,12 +172,13 @@ def get_new_user_book_recommendations(ratings_input, age=25, top_n=10):
     vectors = []
     for _, book_row in unrated.iterrows():
         isbn = book_row["isbn"]
-        b_avg = book_stats.loc[isbn, "mean"]
-        b_count = book_stats.loc[isbn, "count"]
+        b_avg = bs.loc[isbn, "mean"]
+        b_count = bs.loc[isbn, "count"]
         year = float(book_row["year"]) if pd.notna(book_row["year"]) else 1995.0
         vectors.append(build_feature_vector(user_age, user_avg, b_avg, b_count, year))
 
-    X = scaler.transform(pd.DataFrame(vectors, columns=FEATURE_COLS))
+    X = pd.DataFrame(vectors, columns=FEATURE_COLS).fillna(0)
+    X = scaler.transform(X)
 
     pred_linear = np.clip(lr.predict(X), 1.0, 10.0)
     pred_log_proba = log_reg.predict_proba(X)[:, 1]

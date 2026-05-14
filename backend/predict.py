@@ -31,90 +31,97 @@ ALL_GENRES = [
     "Western",
 ]
 
-ALL_OCCUPATIONS = list(range(21))  # 0–20
+ALL_OCCUPATIONS = list(range(21))
 
 
 def build_feature_vector(user_row, movie_row, user_avg, movie_avg, movie_count):
     """Buduje wektor cech dla pary (użytkownik, film)."""
     features = {}
-
-    # cechy użytkownika
     features["age"] = user_row["age"]
     features["gender_encoded"] = 1 if user_row["gender"] == "M" else 0
     features["user_avg_rating"] = user_avg
     features["movie_avg_rating"] = movie_avg
     features["movie_rating_count"] = movie_count
 
-    # rok z tytułu
     import re
 
     match = re.search(r"\((\d{4})\)", movie_row["title"])
     features["year"] = float(match.group(1)) if match else 1995.0
 
-    # gatunki (one-hot)
     movie_genres = movie_row["genres"].split("|")
     for g in ALL_GENRES:
         features[g] = 1 if g in movie_genres else 0
 
-    # zawód (one-hot)
     for occ in ALL_OCCUPATIONS:
         features[f"occ_{occ}"] = 1 if user_row["occupation"] == occ else 0
 
-    # zwróć w kolejności FEATURE_COLS
     return [features.get(col, 0) for col in FEATURE_COLS]
 
 
-def get_recommendations(userId, ratings, movies, users, top_n=10):
-    """Zwraca top_n rekomendacji dla danego użytkownika."""
+def _get_movie_stats(ratings, movie_stats=None):
+    """Zwraca statystyki filmów — z cache lub oblicza od nowa."""
+    if movie_stats is not None:
+        return movie_stats
+    return ratings.groupby("movieId")["rating"].agg(["mean", "count"])
 
+
+def get_recommendations(userId, ratings, movies, users, top_n=10, movie_stats=None):
     user_row = users[users["userId"] == userId].iloc[0]
+    user_avg = ratings[ratings["userId"] == userId]["rating"].mean()
 
-    # filmy których user jeszcze nie oceniał
     rated_movies = set(ratings[ratings["userId"] == userId]["movieId"])
+    ms = _get_movie_stats(ratings, movie_stats)
+
     unrated = movies[~movies["movieId"].isin(rated_movies)].copy()
 
-    # statystyki agregowane
-    user_avg = ratings[ratings["userId"] == userId]["rating"].mean()
-    movie_stats = ratings.groupby("movieId")["rating"].agg(["mean", "count"])
+    # wektoryzacja
+    unrated = unrated.merge(
+        ms.rename(columns={"mean": "movie_avg_rating", "count": "movie_rating_count"}),
+        left_on="movieId",
+        right_index=True,
+        how="left",
+    )
+    unrated["movie_avg_rating"] = unrated["movie_avg_rating"].fillna(3.5)
+    unrated["movie_rating_count"] = unrated["movie_rating_count"].fillna(0)
+    unrated["age"] = user_row["age"]
+    unrated["gender_encoded"] = 1 if user_row["gender"] == "M" else 0
+    unrated["user_avg_rating"] = user_avg
 
-    # buduj wektory cech dla wszystkich nieocenionych filmów
-    vectors = []
-    for _, movie_row in unrated.iterrows():
-        mid = movie_row["movieId"]
-        m_avg = movie_stats.loc[mid, "mean"] if mid in movie_stats.index else 3.5
-        m_count = movie_stats.loc[mid, "count"] if mid in movie_stats.index else 0
-        vec = build_feature_vector(user_row, movie_row, user_avg, m_avg, m_count)
-        vectors.append(vec)
+    import re
 
-    X = X = scaler.transform(pd.DataFrame(vectors, columns=FEATURE_COLS))
-    predicted_ratings = lr.predict(X)
-    predicted_ratings = np.clip(predicted_ratings, 1.0, 5.0)
+    unrated["year"] = (
+        unrated["title"].str.extract(r"\((\d{4})\)").astype(float).fillna(1995.0)
+    )
 
-    unrated = unrated.copy()
+    for g in ALL_GENRES:
+        unrated[g] = unrated["genres"].str.contains(g, regex=False).astype(int)
+
+    for occ in ALL_OCCUPATIONS:
+        unrated[f"occ_{occ}"] = 1 if user_row["occupation"] == occ else 0
+
+    X = scaler.transform(pd.DataFrame(unrated[FEATURE_COLS].fillna(0)))
+    predicted_ratings = np.clip(lr.predict(X), 1.0, 5.0)
+
     unrated["predicted_rating"] = predicted_ratings
     top = unrated.nlargest(top_n, "predicted_rating")
-
     return top[["movieId", "title", "genres", "predicted_rating"]].to_dict(
         orient="records"
     )
 
 
-def get_validation(userId, ratings, movies, users):
-    """Porównuje przewidywane vs rzeczywiste oceny dla danego użytkownika."""
-
+def get_validation(userId, ratings, movies, users, movie_stats=None):
     user_row = users[users["userId"] == userId].iloc[0]
     user_ratings = ratings[ratings["userId"] == userId].merge(movies, on="movieId")
 
     user_avg = user_ratings["rating"].mean()
-    movie_stats = ratings.groupby("movieId")["rating"].agg(["mean", "count"])
+    ms = _get_movie_stats(ratings, movie_stats)
 
     vectors = []
     for _, row in user_ratings.iterrows():
         mid = row["movieId"]
-        m_avg = movie_stats.loc[mid, "mean"] if mid in movie_stats.index else 3.5
-        m_count = movie_stats.loc[mid, "count"] if mid in movie_stats.index else 0
-        vec = build_feature_vector(user_row, row, user_avg, m_avg, m_count)
-        vectors.append(vec)
+        m_avg = ms.loc[mid, "mean"] if mid in ms.index else 3.5
+        m_count = ms.loc[mid, "count"] if mid in ms.index else 0
+        vectors.append(build_feature_vector(user_row, row, user_avg, m_avg, m_count))
 
     X = scaler.transform(pd.DataFrame(vectors, columns=FEATURE_COLS))
     predicted = np.clip(lr.predict(X), 1.0, 5.0)
@@ -140,31 +147,49 @@ def get_validation(userId, ratings, movies, users):
     }
 
 
-def get_recommendations_logistic(userId, ratings, movies, users, top_n=10):
-    """Rekomendacje na podstawie regresji logistycznej (prawdopodobieństwo polubienia)."""
+def get_recommendations_logistic(
+    userId, ratings, movies, users, top_n=10, movie_stats=None
+):
     log_reg = joblib.load(os.path.join(MODEL_DIR, "logistic_model.pkl"))
 
     user_row = users[users["userId"] == userId].iloc[0]
-    rated_movies = set(ratings[ratings["userId"] == userId]["movieId"])
-    unrated = movies[~movies["movieId"].isin(rated_movies)].copy()
     user_avg = ratings[ratings["userId"] == userId]["rating"].mean()
-    movie_stats = ratings.groupby("movieId")["rating"].agg(["mean", "count"])
 
-    vectors = []
-    for _, movie_row in unrated.iterrows():
-        mid = movie_row["movieId"]
-        m_avg = movie_stats.loc[mid, "mean"] if mid in movie_stats.index else 3.5
-        m_count = movie_stats.loc[mid, "count"] if mid in movie_stats.index else 0
-        vec = build_feature_vector(user_row, movie_row, user_avg, m_avg, m_count)
-        vectors.append(vec)
+    rated_movies = set(ratings[ratings["userId"] == userId]["movieId"])
+    ms = _get_movie_stats(ratings, movie_stats)
 
-    X = X = scaler.transform(pd.DataFrame(vectors, columns=FEATURE_COLS))
+    unrated = movies[~movies["movieId"].isin(rated_movies)].copy()
+
+    # wektoryzacja
+    unrated = unrated.merge(
+        ms.rename(columns={"mean": "movie_avg_rating", "count": "movie_rating_count"}),
+        left_on="movieId",
+        right_index=True,
+        how="left",
+    )
+    unrated["movie_avg_rating"] = unrated["movie_avg_rating"].fillna(3.5)
+    unrated["movie_rating_count"] = unrated["movie_rating_count"].fillna(0)
+    unrated["age"] = user_row["age"]
+    unrated["gender_encoded"] = 1 if user_row["gender"] == "M" else 0
+    unrated["user_avg_rating"] = user_avg
+
+    import re
+
+    unrated["year"] = (
+        unrated["title"].str.extract(r"\((\d{4})\)").astype(float).fillna(1995.0)
+    )
+
+    for g in ALL_GENRES:
+        unrated[g] = unrated["genres"].str.contains(g, regex=False).astype(int)
+
+    for occ in ALL_OCCUPATIONS:
+        unrated[f"occ_{occ}"] = 1 if user_row["occupation"] == occ else 0
+
+    X = scaler.transform(pd.DataFrame(unrated[FEATURE_COLS].fillna(0)))
     probabilities = log_reg.predict_proba(X)[:, 1]
 
-    unrated = unrated.copy()
     unrated["like_probability"] = probabilities
     top = unrated.nlargest(top_n, "like_probability")
-
     return (
         top[["movieId", "title", "genres", "like_probability"]]
         .assign(like_probability=lambda x: x["like_probability"].round(4))
@@ -173,13 +198,11 @@ def get_recommendations_logistic(userId, ratings, movies, users, top_n=10):
 
 
 def get_similar_users(gender=None, age=None, occupation=None, limit=20):
-    """Zwraca listę użytkowników pasujących do filtrów demograficznych."""
     from data_loader import load_data
 
     ratings, movies, users = load_data()
 
     filtered = users.copy()
-
     if gender is not None:
         filtered = filtered[filtered["gender"] == gender]
     if age is not None:
@@ -190,12 +213,10 @@ def get_similar_users(gender=None, age=None, occupation=None, limit=20):
     if len(filtered) == 0:
         return []
 
-    # dodaj statystyki
     user_stats = (
         ratings.groupby("userId")["rating"].agg(["count", "mean"]).reset_index()
     )
     user_stats.columns = ["userId", "ratingsCount", "avgRating"]
-
     filtered = filtered.merge(user_stats, on="userId", how="left")
     filtered = filtered.sort_values("ratingsCount", ascending=False).head(limit)
 
@@ -209,22 +230,13 @@ def get_similar_users(gender=None, age=None, occupation=None, limit=20):
 def get_new_user_recommendations(
     user_ratings_input, age=25, gender="M", occupation=4, top_n=10
 ):
-    """
-    Generuje rekomendacje dla nowego użytkownika na podstawie
-    kilku ocen które właśnie wystawił — cold start onboarding.
-
-    user_ratings_input: lista słowników [{movieId: int, rating: float}]
-    """
     from data_loader import load_data
 
     ratings, movies, users = load_data()
 
-    # zbuduj tymczasowy profil użytkownika
     rated_ids = [r["movieId"] for r in user_ratings_input]
-    rated_dict = {r["movieId"]: r["rating"] for r in user_ratings_input}
     user_avg = np.mean([r["rating"] for r in user_ratings_input])
 
-    # tymczasowy wiersz użytkownika
     user_row = pd.Series(
         {
             "userId": -1,
@@ -235,33 +247,28 @@ def get_new_user_recommendations(
         }
     )
 
-    # filmy których user jeszcze nie oceniał
     unrated = movies[~movies["movieId"].isin(rated_ids)].copy()
-    movie_stats = ratings.groupby("movieId")["rating"].agg(["mean", "count"])
+    ms = ratings.groupby("movieId")["rating"].agg(["mean", "count"])
 
     vectors = []
     for _, movie_row in unrated.iterrows():
         mid = movie_row["movieId"]
-        m_avg = movie_stats.loc[mid, "mean"] if mid in movie_stats.index else 3.5
-        m_count = movie_stats.loc[mid, "count"] if mid in movie_stats.index else 0
-        vec = build_feature_vector(user_row, movie_row, user_avg, m_avg, m_count)
-        vectors.append(vec)
+        m_avg = ms.loc[mid, "mean"] if mid in ms.index else 3.5
+        m_count = ms.loc[mid, "count"] if mid in ms.index else 0
+        vectors.append(
+            build_feature_vector(user_row, movie_row, user_avg, m_avg, m_count)
+        )
 
     X = scaler.transform(pd.DataFrame(vectors, columns=FEATURE_COLS))
-
-    # regresja liniowa
     pred_linear = np.clip(lr.predict(X), 1.0, 5.0)
 
-    # regresja logistyczna z optymalnym progiem
-    import json, os
+    import json
 
     threshold_path = os.path.join(MODEL_DIR, "optimal_threshold.json")
+    optimal_threshold = 0.5
     if os.path.exists(threshold_path):
         with open(threshold_path) as f:
-            threshold_data = json.load(f)
-        optimal_threshold = threshold_data["optimal_threshold"]
-    else:
-        optimal_threshold = 0.5
+            optimal_threshold = json.load(f)["optimal_threshold"]
 
     log_reg_model = joblib.load(os.path.join(MODEL_DIR, "logistic_model.pkl"))
     pred_log_proba = log_reg_model.predict_proba(X)[:, 1]
@@ -276,17 +283,15 @@ def get_new_user_recommendations(
     top_combined = unrated.nlargest(top_n, "combined_score")
 
     def to_records(df, score_col, score_type):
-        rows = []
-        for _, r in df.iterrows():
-            rows.append(
-                {
-                    "movieId": int(r["movieId"]),
-                    "title": r["title"],
-                    "genres": r["genres"],
-                    score_type: round(float(r[score_col]), 4),
-                }
-            )
-        return rows
+        return [
+            {
+                "movieId": int(r["movieId"]),
+                "title": r["title"],
+                "genres": r["genres"],
+                score_type: round(float(r[score_col]), 4),
+            }
+            for _, r in df.iterrows()
+        ]
 
     return {
         "user_profile": {
@@ -303,11 +308,15 @@ def get_new_user_recommendations(
     }
 
 
-def get_user_comparison(userId1, userId2, ratings, movies, users, top_n=10):
-    """Porównuje rekomendacje dla dwóch użytkowników."""
-
-    recs1 = get_recommendations(userId1, ratings, movies, users, top_n=20)
-    recs2 = get_recommendations(userId2, ratings, movies, users, top_n=20)
+def get_user_comparison(
+    userId1, userId2, ratings, movies, users, top_n=10, movie_stats=None
+):
+    recs1 = get_recommendations(
+        userId1, ratings, movies, users, top_n=20, movie_stats=movie_stats
+    )
+    recs2 = get_recommendations(
+        userId2, ratings, movies, users, top_n=20, movie_stats=movie_stats
+    )
 
     ids1 = {r["movieId"] for r in recs1}
     ids2 = {r["movieId"] for r in recs2}
@@ -357,11 +366,11 @@ def get_user_taste_profile(userId, ratings, movies):
     srednie = user_ratings[user_ratings["rating"] == 3]
     slabe = user_ratings[user_ratings["rating"] <= 2]
 
+    from collections import Counter
+
     all_genres = []
     for g in lubi["genres"]:
         all_genres.extend(g.split("|"))
-    from collections import Counter
-
     top_genres = [g for g, _ in Counter(all_genres).most_common(5)]
 
     return {
@@ -379,25 +388,25 @@ def get_user_taste_profile(userId, ratings, movies):
     }
 
 
-def get_recommendation_explanation(userId, movieId, ratings, movies, users):
-    """Zwraca top 3 cechy które najbardziej wpłynęły na rekomendację."""
+def get_recommendation_explanation(
+    userId, movieId, ratings, movies, users, movie_stats=None
+):
     user_row = users[users["userId"] == userId].iloc[0]
     movie_row = movies[movies["movieId"] == movieId].iloc[0]
 
     user_avg = ratings[ratings["userId"] == userId]["rating"].mean()
-    movie_stats = ratings.groupby("movieId")["rating"].agg(["mean", "count"])
-    m_avg = movie_stats.loc[movieId, "mean"] if movieId in movie_stats.index else 3.5
-    m_count = movie_stats.loc[movieId, "count"] if movieId in movie_stats.index else 0
+    ms = _get_movie_stats(ratings, movie_stats)
+    m_avg = ms.loc[movieId, "mean"] if movieId in ms.index else 3.5
+    m_count = ms.loc[movieId, "count"] if movieId in ms.index else 0
 
     vec = build_feature_vector(user_row, movie_row, user_avg, m_avg, m_count)
     X_raw = pd.DataFrame([vec], columns=FEATURE_COLS)
     X_scaled = scaler.transform(X_raw)
 
-    coefs = lr.coef_
-    contributions = X_scaled[0] * coefs
-
-    feature_contributions = list(zip(FEATURE_COLS, contributions))
-    feature_contributions.sort(key=lambda x: abs(x[1]), reverse=True)
+    contributions = X_scaled[0] * lr.coef_
+    feature_contributions = sorted(
+        zip(FEATURE_COLS, contributions), key=lambda x: abs(x[1]), reverse=True
+    )
 
     FEATURE_LABELS = {
         "age": "Wiek użytkownika",
@@ -409,23 +418,17 @@ def get_recommendation_explanation(userId, movieId, ratings, movies, users):
     }
 
     top3 = []
-    for feat, contrib in feature_contributions[:5]:
+    for feat, contrib in feature_contributions:
         if feat.startswith("occ_"):
             continue
-        label = FEATURE_LABELS.get(feat, feat)
-        direction = "+" if contrib > 0 else "-"
         top3.append(
             {
-                "feature": label,
+                "feature": FEATURE_LABELS.get(feat, feat),
                 "contribution": round(float(contrib), 3),
-                "direction": direction,
+                "direction": "+" if contrib > 0 else "-",
             }
         )
         if len(top3) == 3:
             break
 
-    return {
-        "movieId": movieId,
-        "title": movie_row["title"],
-        "top_features": top3,
-    }
+    return {"movieId": movieId, "title": movie_row["title"], "top_features": top3}
