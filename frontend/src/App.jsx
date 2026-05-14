@@ -338,7 +338,7 @@ export default function App() {
                     {t('nav.linear_desc')}
                   </p>
                   {filterByGenre(recsLinear).map((rec, i) => (
-                    <RecommendationCard key={rec.movieId} rank={i + 1} rec={rec} type="linear" />
+                    <RecommendationCard key={rec.movieId} rank={i + 1} rec={rec} type="linear" userId={userId} />
                   ))}
                 </div>
                 <div>
@@ -357,7 +357,7 @@ export default function App() {
                     {t('nav.logistic_desc')}
                   </p>
                   {filterByGenre(recsLogistic).map((rec, i) => (
-                    <RecommendationCard key={rec.movieId} rank={i + 1} rec={rec} type="logistic" />
+                    <RecommendationCard key={rec.movieId} rank={i + 1} rec={rec} type="logistic" userId={userId} />
                   ))}
                 </div>
               </div>

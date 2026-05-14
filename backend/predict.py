@@ -377,3 +377,55 @@ def get_user_taste_profile(userId, ratings, movies):
             "total": len(user_ratings),
         },
     }
+
+
+def get_recommendation_explanation(userId, movieId, ratings, movies, users):
+    """Zwraca top 3 cechy które najbardziej wpłynęły na rekomendację."""
+    user_row = users[users["userId"] == userId].iloc[0]
+    movie_row = movies[movies["movieId"] == movieId].iloc[0]
+
+    user_avg = ratings[ratings["userId"] == userId]["rating"].mean()
+    movie_stats = ratings.groupby("movieId")["rating"].agg(["mean", "count"])
+    m_avg = movie_stats.loc[movieId, "mean"] if movieId in movie_stats.index else 3.5
+    m_count = movie_stats.loc[movieId, "count"] if movieId in movie_stats.index else 0
+
+    vec = build_feature_vector(user_row, movie_row, user_avg, m_avg, m_count)
+    X_raw = pd.DataFrame([vec], columns=FEATURE_COLS)
+    X_scaled = scaler.transform(X_raw)
+
+    coefs = lr.coef_
+    contributions = X_scaled[0] * coefs
+
+    feature_contributions = list(zip(FEATURE_COLS, contributions))
+    feature_contributions.sort(key=lambda x: abs(x[1]), reverse=True)
+
+    FEATURE_LABELS = {
+        "age": "Wiek użytkownika",
+        "gender_encoded": "Płeć użytkownika",
+        "user_avg_rating": "Średnia ocen użytkownika",
+        "movie_avg_rating": "Popularność filmu",
+        "movie_rating_count": "Liczba ocen filmu",
+        "year": "Rok produkcji",
+    }
+
+    top3 = []
+    for feat, contrib in feature_contributions[:5]:
+        if feat.startswith("occ_"):
+            continue
+        label = FEATURE_LABELS.get(feat, feat)
+        direction = "+" if contrib > 0 else "-"
+        top3.append(
+            {
+                "feature": label,
+                "contribution": round(float(contrib), 3),
+                "direction": direction,
+            }
+        )
+        if len(top3) == 3:
+            break
+
+    return {
+        "movieId": movieId,
+        "title": movie_row["title"],
+        "top_features": top3,
+    }

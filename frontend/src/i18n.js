@@ -414,6 +414,13 @@ const translations = {
         export_csv_linear: 'Pobierz CSV (liniowa)',
         export_csv_logistic: 'Pobierz CSV (logistyczna)',
 
+        //explain_why
+        why_button: 'Dlaczego?',
+        why_title: 'Dlaczego ten film?',
+        why_loading: 'Analizuję...',
+        why_positive: 'zwiększa szansę',
+        why_negative: 'zmniejsza szansę',
+
     },
 
     EN: {
@@ -813,6 +820,13 @@ const translations = {
         export_csv: 'Export CSV',
         export_csv_linear: 'Download CSV (linear)',
         export_csv_logistic: 'Download CSV (logistic)',
+
+        //explain_why
+        why_button: 'Why?',
+        why_title: 'Why this film?',
+        why_loading: 'Analyzing...',
+        why_positive: 'increases chance',
+        why_negative: 'decreases chance',
     },
 }
 

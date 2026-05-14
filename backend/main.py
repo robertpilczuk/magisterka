@@ -2,7 +2,12 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from data_loader import load_data
 import pandas as pd
-from predict import get_recommendations, get_validation, get_recommendations_logistic
+from predict import (
+    get_recommendations,
+    get_validation,
+    get_recommendations_logistic,
+    get_recommendation_explanation,
+)
 import random
 
 app = FastAPI(title="Film Recommender API")
@@ -293,3 +298,10 @@ def books_user_taste(userId: int):
 def books_random_user():
     available = books_ratings["userId"].unique().tolist()
     return {"userId": int(random.choice(available))}
+
+
+@app.get("/explain/{userId}/{movieId}")
+def explain(userId: int, movieId: int):
+    if userId not in users["userId"].values:
+        raise HTTPException(status_code=404, detail=f"User {userId} not found")
+    return get_recommendation_explanation(userId, movieId, ratings, movies, users)
