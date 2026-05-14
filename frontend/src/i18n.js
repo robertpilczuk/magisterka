@@ -421,6 +421,9 @@ const translations = {
         why_positive: 'zwiększa szansę',
         why_negative: 'zmniejsza szansę',
 
+        dark_mode: 'Tryb ciemny',
+        light_mode: 'Tryb jasny',
+
     },
 
     EN: {
@@ -827,6 +830,9 @@ const translations = {
         why_loading: 'Analyzing...',
         why_positive: 'increases chance',
         why_negative: 'decreases chance',
+
+        dark_mode: 'Dark mode',
+        light_mode: 'Light mode',
     },
 }
 
