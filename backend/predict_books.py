@@ -48,7 +48,8 @@ def get_book_recommendations(userId, ratings, books, users, top_n=10):
         year = float(book_row["year"]) if pd.notna(book_row["year"]) else 1995.0
         vectors.append(build_feature_vector(user_age, user_avg, b_avg, b_count, year))
 
-    X = scaler.transform(pd.DataFrame(vectors, columns=FEATURE_COLS))
+    X = pd.DataFrame(vectors, columns=FEATURE_COLS).fillna(0)
+    X = scaler.transform(X)
     predicted = np.clip(lr.predict(X), 1.0, 10.0)
 
     unrated = unrated.copy()
@@ -80,7 +81,8 @@ def get_book_recommendations_logistic(userId, ratings, books, users, top_n=10):
         year = float(book_row["year"]) if pd.notna(book_row["year"]) else 1995.0
         vectors.append(build_feature_vector(user_age, user_avg, b_avg, b_count, year))
 
-    X = scaler.transform(pd.DataFrame(vectors, columns=FEATURE_COLS))
+    X = pd.DataFrame(vectors, columns=FEATURE_COLS).fillna(0)
+    X = scaler.transform(X)
     probabilities = log_reg.predict_proba(X)[:, 1]
 
     unrated = unrated.copy()
@@ -100,6 +102,13 @@ def get_book_validation(userId, ratings, books, users):
     user_ratings = ratings[ratings["userId"] == userId].merge(
         books[["isbn", "title", "author"]], on="isbn"
     )
+
+    if len(user_ratings) == 0:
+        return {"userId": userId, "rmse": 0.0, "mae": 0.0, "count": 0, "samples": []}
+
+    user_ratings = ratings[ratings["userId"] == userId].merge(
+        books[["isbn", "title", "author"]], on="isbn"
+    )
     user_avg = user_ratings["rating"].mean()
     book_stats = ratings.groupby("isbn")["rating"].agg(["mean", "count"])
 
@@ -110,7 +119,8 @@ def get_book_validation(userId, ratings, books, users):
         b_count = book_stats.loc[isbn, "count"] if isbn in book_stats.index else 0
         vectors.append(build_feature_vector(user_age, user_avg, b_avg, b_count, 1995.0))
 
-    X = scaler.transform(pd.DataFrame(vectors, columns=FEATURE_COLS))
+    X = pd.DataFrame(vectors, columns=FEATURE_COLS).fillna(0)
+    X = scaler.transform(X)
     predicted = np.clip(lr.predict(X), 1.0, 10.0)
     actual = user_ratings["rating"].values
 
