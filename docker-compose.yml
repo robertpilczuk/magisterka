@@ -8,9 +8,12 @@ services:
     volumes:
       - ./data:/app/data:ro
       - ./backend/model:/app/model
+      - ./backend/model_books:/app/model_books
+      - ./data/books:/app/data/books:ro
     environment:
       - PYTHONUNBUFFERED=1
       - DATA_DIR=/app/data
+      - DATA_DIR_BOOKS=/app/data/books
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/"]
       interval: 30s
