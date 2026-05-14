@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import axios from 'axios'
 import { useLang } from '../LangContext'
 import Spinner from './Spinner'
@@ -485,6 +485,7 @@ export default function BooksApp() {
     const [tasteProfile, setTasteProfile] = useState(null)
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState(null)
+    const [topN, setTopN] = useState(10)
 
     const tabStyle = (tab) => ({
         padding: '12px 32px', fontSize: '15px', fontWeight: '600',
@@ -495,15 +496,15 @@ export default function BooksApp() {
         cursor: 'pointer', transition: 'all 0.2s'
     })
 
-    async function fetchAll(id) {
+    async function fetchAll(id, n = topN) {
         const uid = parseInt(id)
         if (isNaN(uid) || uid < 1) return
         setLoading(true); setError(null)
         try {
             const [profile, linear, logistic, valid, taste] = await Promise.all([
                 axios.get(`${API}/books/user/${uid}`),
-                axios.get(`${API}/books/recommend/${uid}`),
-                axios.get(`${API}/books/recommend-logistic/${uid}`),
+                axios.get(`${API}/books/recommend/${uid}?top_n=${n}`),
+                axios.get(`${API}/books/recommend-logistic/${uid}?top_n=${n}`),
                 axios.get(`${API}/books/validate/${uid}`),
                 axios.get(`${API}/books/user-taste/${uid}`),
             ])
@@ -518,6 +519,10 @@ export default function BooksApp() {
             setLoading(false)
         }
     }
+
+    useEffect(() => {
+        if (userId) fetchAll(userId, topN)
+    }, [topN])
 
     async function fetchRandom() {
         try {
@@ -552,6 +557,17 @@ export default function BooksApp() {
 
             {activeTab === 'existing' && (
                 <>
+                    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '16px', marginBottom: '24px' }}>
+                        <span style={{ fontSize: '14px', color: '#666' }}>{t('top_n.label')}:</span>
+                        <input
+                            type="range" min="5" max="50" step="5" value={topN}
+                            onChange={e => setTopN(parseInt(e.target.value))}
+                            style={{ width: '200px', accentColor: '#2ecc71', cursor: 'pointer' }}
+                        />
+                        <span style={{ fontSize: '16px', fontWeight: '700', color: '#2ecc71', minWidth: '32px' }}>
+                            {topN}
+                        </span>
+                    </div>
                     <SimilarBooksUsersFilter onSelectUser={fetchAll} />
 
                     {/* wyszukiwarka — tylko raz */}
@@ -600,6 +616,17 @@ export default function BooksApp() {
 
                     {!loading && userProfile && (
                         <>
+                            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '16px', marginBottom: '24px' }}>
+                                <span style={{ fontSize: '14px', color: '#666' }}>{t('top_n.label')}:</span>
+                                <input
+                                    type="range" min="5" max="50" step="5" value={topN}
+                                    onChange={e => setTopN(parseInt(e.target.value))}
+                                    style={{ width: '200px', accentColor: '#2ecc71', cursor: 'pointer' }}
+                                />
+                                <span style={{ fontSize: '16px', fontWeight: '700', color: '#2ecc71', minWidth: '32px' }}>
+                                    {topN}
+                                </span>
+                            </div>
                             <BookUserProfile profile={userProfile} />
                             <BookTasteProfile taste={tasteProfile} />
 

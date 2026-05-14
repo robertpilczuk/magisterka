@@ -376,6 +376,10 @@ const translations = {
             show_more: 'Pokaż więcej',
             remaining: 'pozostałych',
         },
+        top_n: {
+            label: 'Liczba rekomendacji',
+            hint: 'Przesuń żeby zmienić liczbę wyświetlanych rekomendacji',
+        },
 
     },
 
@@ -737,6 +741,10 @@ const translations = {
             no_books: 'No books in this category',
             show_more: 'Show more',
             remaining: 'remaining',
+        },
+        top_n: {
+            label: 'Number of recommendations',
+            hint: 'Slide to change the number of displayed recommendations',
         },
 
     },

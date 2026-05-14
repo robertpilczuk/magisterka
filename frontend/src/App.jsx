@@ -33,6 +33,7 @@ export default function App() {
   const [tasteProfile, setTasteProfile] = useState(null)
   const [excludedGenres, setExcludedGenres] = useState([]) // filtr rekomendacji
   const [excludedProfileGenres, setExcludedProfileGenres] = useState([]) // filtr profilu
+  const [topN, setTopN] = useState(10)
 
   // stan dla porównania
   const [compareUserId, setCompareUserId] = useState('')
@@ -44,15 +45,15 @@ export default function App() {
     setLang(lang === 'PL' ? 'EN' : 'PL')
   }
 
-  async function fetchAll(id) {
+  async function fetchAll(id, n = topN) {
     setLoading(true)
     setError(null)
     setComparison(null)
     try {
       const [profile, linear, logistic, valid, taste] = await Promise.all([
         axios.get(`${API}/user/${id}`),
-        axios.get(`${API}/recommend/${id}`),
-        axios.get(`${API}/recommend-logistic/${id}`),
+        axios.get(`${API}/recommend/${id}?top_n=${n}`),
+        axios.get(`${API}/recommend-logistic/${id}?top_n=${n}`),
         axios.get(`${API}/validate/${id}`),
         axios.get(`${API}/user-taste/${id}`)
       ])
@@ -68,6 +69,11 @@ export default function App() {
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    if (userId) fetchAll(userId, topN)
+  }, [topN])
+
 
   async function fetchComparison() {
     const id2 = parseInt(compareUserId)
@@ -178,7 +184,17 @@ export default function App() {
           🔬 {t('nav.tab_deep')}
         </button>
       </div>
-
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '16px', marginBottom: '24px' }}>
+        <span style={{ fontSize: '14px', color: '#666' }}>{t('top_n.label')}:</span>
+        <input
+          type="range" min="5" max="50" step="5" value={topN}
+          onChange={e => setTopN(parseInt(e.target.value))}
+          style={{ width: '200px', accentColor: '#4a90d9', cursor: 'pointer' }}
+        />
+        <span style={{ fontSize: '16px', fontWeight: '700', color: '#4a90d9', minWidth: '32px' }}>
+          {topN}
+        </span>
+      </div>
       {/* zakładka 1 — użytkownik z bazy */}
       {activeTab === 'existing' && (
         <>
