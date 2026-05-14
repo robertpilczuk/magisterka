@@ -308,8 +308,14 @@ const translations = {
             validation_subtitle: 'Porównanie przewidywanych vs rzeczywistych ocen',
             validation_based_on: 'na podstawie',
             validation_ratings: 'ocen',
+            rmse_title: 'Jak dokładny jest system?',
+            rmse_explain_full: 'Ten wynik pokazuje, jak dokładnie nasz system potrafi przewidywać oceny książek. Przykładowo: użytkownik ocenił książkę na 8/10, system przewidział 7/10 — pomyłka o 1 punkt. RMSE informuje jak duże są takie pomyłki średnio. Im niższy wynik, tym trafniejsze rekomendacje.',
+            mae_title: 'Średnia różnica ocen',
+            mae_explain_full: 'MAE pokazuje, o ile punktów średnio różni się przewidywana ocena od oceny którą użytkownik faktycznie wystawił. Przykład: użytkownik ocenił książkę na 9/10, system przewidział 8/10 — różnica wynosi 1 punkt. Im niższa wartość, tym bardziej trafne rekomendacje.',
             rmse_hint: 'im niższe tym lepiej',
             mae_hint: 'im niższe tym lepiej',
+            count_hint: 'ocen tego użytkownika',
+            scale_info: 'w skali 1–10',
             sample_title: 'Próbka 20 przewidywań',
             col_book: 'Książka',
             col_author: 'Autor',
@@ -334,6 +340,8 @@ const translations = {
             panel_combined: 'Połączony',
             combined_desc: '50% regresja liniowa + 50% regresja logistyczna',
             threshold_desc: 'Prawdopodobieństwo polubienia (próg:',
+            random_user: '🎲 Losuj czytelnika',
+
         },
         books_similar: {
             title: 'Znajdź podobnych czytelników',
@@ -368,6 +376,7 @@ const translations = {
             show_more: 'Pokaż więcej',
             remaining: 'pozostałych',
         },
+
     },
 
     EN: {
@@ -523,6 +532,9 @@ const translations = {
             ratings: 'ratings',
             rmse_hint: 'lower is better',
             mae_hint: 'lower is better',
+            rmse_explain: 'Average prediction error on a 1–10 scale',
+            mae_explain: 'Typical difference between predicted and actual rating',
+            count_hint: 'ratings by this user',
             count_hint: 'by user',
             sample_title: 'Sample of 20 predictions',
             col_film: 'Film',
@@ -659,8 +671,14 @@ const translations = {
             validation_subtitle: 'Predicted vs actual ratings comparison',
             validation_based_on: 'based on',
             validation_ratings: 'ratings',
+            rmse_title: 'How accurate is the system?',
+            rmse_explain_full: 'This score shows how accurately our system predicts book ratings. For example: a user rated a book 8/10, the system predicted 7/10 — an error of 1 point. RMSE shows how large these errors are on average. The lower the score, the more accurate the recommendations.',
+            mae_title: 'Average rating difference',
+            mae_explain_full: 'MAE shows by how many points the predicted rating differs from the actual rating given by the user. Example: a user rated a book 9/10, the system predicted 8/10 — a difference of 1 point. The lower the value, the more accurate the recommendations.',
             rmse_hint: 'lower is better',
             mae_hint: 'lower is better',
+            count_hint: 'ratings by this user',
+            scale_info: 'on a 1–10 scale',
             sample_title: 'Sample of 20 predictions',
             col_book: 'Book',
             col_author: 'Author',
@@ -685,6 +703,7 @@ const translations = {
             panel_combined: 'Combined',
             combined_desc: '50% linear regression + 50% logistic regression',
             threshold_desc: 'Probability of liking (threshold:',
+            random_user: '🎲 Random reader',
         },
         books_similar: {
             title: 'Find similar readers',
@@ -719,7 +738,6 @@ const translations = {
             show_more: 'Show more',
             remaining: 'remaining',
         },
-
 
     },
 }

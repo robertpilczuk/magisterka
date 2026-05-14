@@ -130,28 +130,72 @@ function BookValidation({ validation }) {
             marginTop: '40px', background: '#f8f9fa',
             border: '1px solid #e0e0e0', borderRadius: '12px', padding: '24px'
         }}>
-            <h2 style={{ marginTop: 0, marginBottom: '8px' }}>
+            <h2 style={{ marginTop: 0, marginBottom: '8px', color: '#333' }}>
                 🔬 {t('books_app.validation_title')}
             </h2>
-            <p style={{ color: '#666', fontSize: '14px', marginBottom: '20px' }}>
+            <p style={{ color: '#666', fontSize: '14px', marginBottom: '24px' }}>
                 {t('books_app.validation_subtitle')} ({t('books_app.validation_based_on')} {count} {t('books_app.validation_ratings')}).
             </p>
-            <div style={{ display: 'flex', gap: '24px', marginBottom: '24px', flexWrap: 'wrap' }}>
-                {[
-                    { label: 'RMSE', value: rmse, hint: t('books_app.rmse_hint') },
-                    { label: 'MAE', value: mae, hint: t('books_app.mae_hint') },
-                    { label: t('books_app.ratings_count'), value: count, hint: '' },
-                ].map(({ label, value, hint }) => (
-                    <div key={label} style={{
-                        background: 'white', borderRadius: '10px', padding: '16px 24px',
-                        border: '1px solid #e0e0e0', textAlign: 'center'
-                    }}>
-                        <div style={{ color: '#888', fontSize: '13px' }}>{label}</div>
-                        <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#2ecc71' }}>{value}</div>
-                        <div style={{ color: '#aaa', fontSize: '12px' }}>{hint}</div>
+
+            <div style={{ display: 'flex', gap: '24px', marginBottom: '32px', flexWrap: 'wrap' }}>
+                <div style={{
+                    background: 'white', borderRadius: '12px', padding: '20px 24px',
+                    border: '1px solid #e0e0e0', flex: 1, minWidth: '260px'
+                }}>
+                    <div style={{ color: '#888', fontSize: '13px', marginBottom: '4px' }}>
+                        📉 RMSE — {t('books_app.rmse_title')}
                     </div>
-                ))}
+                    <div style={{ fontSize: '36px', fontWeight: 'bold', color: '#2ecc71', marginBottom: '8px' }}>
+                        {rmse}
+                    </div>
+                    <div style={{ fontSize: '12px', color: '#aaa', marginBottom: '12px' }}>
+                        {t('books_app.rmse_hint')} · {t('books_app.scale_info')}
+                    </div>
+                    <div style={{
+                        fontSize: '13px', color: '#555', lineHeight: '1.6',
+                        borderTop: '1px solid #f0f0f0', paddingTop: '12px'
+                    }}>
+                        {t('books_app.rmse_explain_full').replace('RMSE', `RMSE = ${rmse}`)}
+                    </div>
+                </div>
+
+                <div style={{
+                    background: 'white', borderRadius: '12px', padding: '20px 24px',
+                    border: '1px solid #e0e0e0', flex: 1, minWidth: '260px'
+                }}>
+                    <div style={{ color: '#888', fontSize: '13px', marginBottom: '4px' }}>
+                        📊 MAE — {t('books_app.mae_title')}
+                    </div>
+                    <div style={{ fontSize: '36px', fontWeight: 'bold', color: '#2ecc71', marginBottom: '8px' }}>
+                        {mae}
+                    </div>
+                    <div style={{ fontSize: '12px', color: '#aaa', marginBottom: '12px' }}>
+                        {t('books_app.mae_hint')} · {t('books_app.scale_info')}
+                    </div>
+                    <div style={{
+                        fontSize: '13px', color: '#555', lineHeight: '1.6',
+                        borderTop: '1px solid #f0f0f0', paddingTop: '12px'
+                    }}>
+                        {t('books_app.mae_explain_full').replace('MAE', `MAE = ${mae}`)}
+                    </div>
+                </div>
+
+                <div style={{
+                    background: 'white', borderRadius: '12px', padding: '20px 24px',
+                    border: '1px solid #e0e0e0', textAlign: 'center', minWidth: '140px'
+                }}>
+                    <div style={{ color: '#888', fontSize: '13px', marginBottom: '4px' }}>
+                        {t('books_app.ratings_count')}
+                    </div>
+                    <div style={{ fontSize: '36px', fontWeight: 'bold', color: '#2ecc71' }}>
+                        {count}
+                    </div>
+                    <div style={{ fontSize: '12px', color: '#aaa' }}>
+                        {t('books_app.count_hint')}
+                    </div>
+                </div>
             </div>
+
             <h3 style={{ marginBottom: '12px' }}>{t('books_app.sample_title')}</h3>
             <div style={{ overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
@@ -212,7 +256,7 @@ const SAMPLE_BOOKS = [
     { isbn: '0679720202', title: 'Animal Farm', author: 'George Orwell' },
     { isbn: '0060850523', title: 'Mere Christianity', author: 'C.S. Lewis' },
     { isbn: '0671027360', title: "Angela's Ashes", author: 'Frank McCourt' },
-    { isbn: '0385504209', title: 'The Alchemist', author: 'Paulo Coelho' },
+    { isbn: '0141182806', title: 'Wuthering Heights', author: 'Emily Brontë' },
 ]
 
 function NewUserBooks() {
@@ -223,7 +267,6 @@ function NewUserBooks() {
     const [results, setResults] = useState(null)
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState(null)
-    const [tasteProfile, setTasteProfile] = useState(null)
     const [activePanel, setPanel] = useState('linear')
 
     const ratedCount = Object.keys(ratings).length
@@ -262,6 +305,7 @@ function NewUserBooks() {
 
     return (
         <div>
+            {/* KROK 1 */}
             {step === 1 && (
                 <div style={{ maxWidth: '500px', margin: '0 auto' }}>
                     <h2>{t('books_app.step1_title')}</h2>
@@ -289,8 +333,9 @@ function NewUserBooks() {
                 </div>
             )}
 
+            {/* KROK 2 */}
             {step === 2 && (
-                <div>
+                <div style={{ maxWidth: '960px', margin: '0 auto' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                         <h2 style={{ margin: 0 }}>📚 {t('books_app.step2_title')}</h2>
                         <div style={{ fontSize: '14px', color: ratedCount >= 3 ? '#2ecc71' : '#888' }}>
@@ -298,9 +343,12 @@ function NewUserBooks() {
                         </div>
                     </div>
                     <p style={{ color: '#666', marginBottom: '20px' }}>{t('books_app.step2_desc')}</p>
+
                     <div style={{
-                        display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))',
-                        gap: '12px', marginBottom: '24px'
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+                        gap: '12px',
+                        marginBottom: '24px',
                     }}>
                         {SAMPLE_BOOKS.map(book => (
                             <div key={book.isbn} style={{
@@ -314,22 +362,27 @@ function NewUserBooks() {
                                 <div style={{ fontSize: '12px', color: '#888', marginBottom: '10px' }}>
                                     ✍️ {book.author}
                                 </div>
-                                <div style={{ display: 'flex', gap: '4px', alignItems: 'center', flexWrap: 'wrap' }}>
+                                <div style={{ display: 'flex', gap: '3px', alignItems: 'center', flexWrap: 'nowrap' }}>
                                     {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(star => (
                                         <button key={star} onClick={() => setRating(book.isbn, star)}
                                             style={{
-                                                width: '28px', height: '28px',
+                                                width: '26px', height: '26px',
                                                 background: ratings[book.isbn] >= star ? '#2ecc71' : '#f0f0f0',
                                                 color: ratings[book.isbn] >= star ? 'white' : '#aaa',
                                                 border: 'none', borderRadius: '4px',
-                                                cursor: 'pointer', fontSize: '11px', fontWeight: '600'
+                                                cursor: 'pointer', fontSize: '11px', fontWeight: '600',
+                                                flexShrink: 0
                                             }}>
                                             {star}
                                         </button>
                                     ))}
                                     {ratings[book.isbn] && (
                                         <button onClick={() => clearRating(book.isbn)}
-                                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ccc', fontSize: '16px' }}>
+                                            style={{
+                                                background: 'none', border: 'none',
+                                                cursor: 'pointer', color: '#ccc',
+                                                fontSize: '16px', marginLeft: '4px', flexShrink: 0
+                                            }}>
                                             ✕
                                         </button>
                                     )}
@@ -337,6 +390,7 @@ function NewUserBooks() {
                             </div>
                         ))}
                     </div>
+
                     <div style={{ display: 'flex', gap: '12px' }}>
                         <button onClick={() => setStep(1)} style={{
                             padding: '10px 20px', background: '#eee', color: '#666',
@@ -360,6 +414,7 @@ function NewUserBooks() {
                 </div>
             )}
 
+            {/* KROK 3 */}
             {step === 3 && results && (
                 <div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
@@ -431,7 +486,6 @@ export default function BooksApp() {
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState(null)
 
-
     const tabStyle = (tab) => ({
         padding: '12px 32px', fontSize: '15px', fontWeight: '600',
         border: 'none',
@@ -465,6 +519,16 @@ export default function BooksApp() {
         }
     }
 
+    async function fetchRandom() {
+        try {
+            const res = await axios.get(`${API}/books/random-user`)
+            setUserId(String(res.data.userId))
+            fetchAll(res.data.userId)
+        } catch (err) {
+            setError(err.response?.data?.detail || 'Błąd połączenia z API')
+        }
+    }
+
     return (
         <div>
             <h1 style={{ textAlign: 'center', marginBottom: '4px' }}>
@@ -489,6 +553,8 @@ export default function BooksApp() {
             {activeTab === 'existing' && (
                 <>
                     <SimilarBooksUsersFilter onSelectUser={fetchAll} />
+
+                    {/* wyszukiwarka — tylko raz */}
                     <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginBottom: '24px' }}>
                         <input
                             type="number"
@@ -508,6 +574,13 @@ export default function BooksApp() {
                             border: 'none', borderRadius: '8px', cursor: 'pointer'
                         }}>
                             {t('books_app.search_button')}
+                        </button>
+                        <button onClick={fetchRandom} style={{
+                            padding: '10px 24px', fontSize: '16px',
+                            background: '#f39c12', color: 'white',
+                            border: 'none', borderRadius: '8px', cursor: 'pointer'
+                        }}>
+                            {t('books_app.random_user')}
                         </button>
                     </div>
 

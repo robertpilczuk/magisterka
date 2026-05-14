@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from data_loader import load_data
 import pandas as pd
 from predict import get_recommendations, get_validation, get_recommendations_logistic
+import random
 
 app = FastAPI(title="Film Recommender API")
 
@@ -286,3 +287,9 @@ def books_user_taste(userId: int):
             "total": len(user_ratings),
         },
     }
+
+
+@app.get("/books/random-user")
+def books_random_user():
+    available = books_ratings["userId"].unique().tolist()
+    return {"userId": int(random.choice(available))}
