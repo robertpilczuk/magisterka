@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useLang } from './LangContext'
 import axios from 'axios'
 import LandingPage from './components/LandingPage'
+import BooksApp from './components/BooksApp'
 import SearchBar from './components/SearchBar'
 import UserProfile from './components/UserProfile'
 import RecommendationCard from './components/RecommendationCard'
@@ -13,6 +14,7 @@ import Spinner from './components/Spinner'
 import UserTasteProfile from './components/UserTasteProfile'
 import GenreFilter from './components/GenreFilter'
 import DeepAnalysisFlow from './components/DeepAnalysisFlow'
+
 
 const API = 'http://localhost:8000'
 
@@ -103,6 +105,34 @@ export default function App() {
   if (!contentType) {
     return <LandingPage onSelect={setContentType} />
   }
+
+  if (contentType === 'books') {
+    return (
+      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '24px', fontFamily: 'sans-serif' }}>
+        <div style={{ position: 'fixed', top: '16px', left: '16px', zIndex: 1000 }}>
+          <button onClick={() => setContentType(null)} style={{
+            padding: '6px 14px', borderRadius: '20px',
+            border: '2px solid #333', background: 'white',
+            cursor: 'pointer', fontSize: '13px', fontWeight: '700',
+            color: '#333', boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+          }}>{t('landing.back')}</button>
+        </div>
+        <div style={{ position: 'fixed', top: '16px', right: '16px', zIndex: 1000 }}>
+          <button onClick={toggleLang} style={{
+            padding: '6px 14px', borderRadius: '20px',
+            border: '2px solid #333', background: 'white',
+            cursor: 'pointer', fontSize: '13px', fontWeight: '700',
+            color: '#333', boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+          }}>
+            {lang === 'PL' ? '🇬🇧 EN' : '🇵🇱 PL'}
+          </button>
+        </div>
+        <div style={{ marginTop: '48px' }}>
+          <BooksApp />
+        </div>
+      </div>
+    )
+  }
   return (
     <div style={{
       maxWidth: '1200px', margin: '0 auto', padding: '24px',
@@ -112,18 +142,18 @@ export default function App() {
       <button onClick={() => setContentType(null)} style={{
         position: 'fixed', top: '16px', left: '16px', zIndex: 1000,
         padding: '6px 14px', borderRadius: '20px',
-        border: '1px solid #ddd', background: 'white',
-        cursor: 'pointer', fontSize: '13px', fontWeight: '600',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+        border: '2px solid #333', background: 'white',
+        cursor: 'pointer', fontSize: '13px', fontWeight: '700',
+        color: '#333', boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
       }}>
         {t('landing.back')}
       </button>
       <div style={{ position: 'fixed', top: '16px', right: '16px', zIndex: 1000 }}>
         <button onClick={toggleLang} style={{
           padding: '6px 14px', borderRadius: '20px',
-          border: '1px solid #ddd', background: 'white',
-          cursor: 'pointer', fontSize: '13px', fontWeight: '600',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+          border: '2px solid #333', background: 'white',
+          cursor: 'pointer', fontSize: '13px', fontWeight: '700',
+          color: '#333', boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
         }}>
           {lang === 'PL' ? '🇬🇧 EN' : '🇵🇱 PL'}
         </button>

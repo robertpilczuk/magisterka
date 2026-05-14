@@ -16,7 +16,7 @@ const CONTENT_TYPES = [
     {
         key: 'books',
         emoji: '📚',
-        available: false,
+        available: true,
         color: '#2ecc71',
     },
 ]
