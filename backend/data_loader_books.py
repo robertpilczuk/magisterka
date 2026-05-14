@@ -19,7 +19,10 @@ def load_books_data():
         on_bad_lines="skip",
     )
     users = pd.read_csv(
-        os.path.join(DATA_DIR, "Users.csv"), sep=";", encoding="latin-1"
+        os.path.join(DATA_DIR, "Users.csv"),
+        sep=";",
+        encoding="latin-1",
+        low_memory=False,
     )
 
     ratings.columns = ["userId", "isbn", "rating"]
