@@ -18,7 +18,7 @@ import DeepAnalysisFlow from './components/DeepAnalysisFlow'
 import EvaluationChart from './components/EvaluationChart'
 import translations from './i18n'
 
-const API = 'http://localhost:8000'
+const API = 'http://127.0.0.1:8000'
 
 export default function App() {
   const { lang, setLang, t } = useLang()
