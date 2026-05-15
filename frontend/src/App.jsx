@@ -15,6 +15,8 @@ import Spinner from './components/Spinner'
 import UserTasteProfile from './components/UserTasteProfile'
 import GenreFilter from './components/GenreFilter'
 import DeepAnalysisFlow from './components/DeepAnalysisFlow'
+import EvaluationChart from './components/EvaluationChart'
+import translations from './i18n'
 
 const API = 'http://localhost:8000'
 
@@ -34,6 +36,7 @@ export default function App() {
   const [excludedGenres, setExcludedGenres] = useState([])
   const [excludedProfileGenres, setExcludedProfileGenres] = useState([])
   const [topN, setTopN] = useState(10)
+  const [evaluation, setEvaluation] = useState(null)
 
   const [searchHistory, setSearchHistory] = useState(() => {
     try {
@@ -59,6 +62,7 @@ export default function App() {
   }
 
   async function fetchAll(id, n = topN) {
+    setEvaluation(null)
     setLoading(true)
     setError(null)
     setComparison(null)
@@ -77,6 +81,7 @@ export default function App() {
       setRecsLogistic(logistic.data.recommendations)
       setValidation(valid.data)
       setTasteProfile(taste.data)
+      fetchEvaluation(id, n)
     } catch (err) {
       setError(err.response?.data?.detail || 'Błąd połączenia z API')
     } finally {
@@ -99,6 +104,15 @@ export default function App() {
       setError(err.response?.data?.detail || 'Błąd porównania')
     } finally {
       setCompareLoading(false)
+    }
+  }
+
+  async function fetchEvaluation(id, n = topN) {
+    try {
+      const res = await axios.get(`${API}/evaluate/${id}?top_n=${n}`)
+      setEvaluation(res.data)
+    } catch (err) {
+      console.error('Błąd ewaluacji:', err)
     }
   }
 
@@ -363,6 +377,7 @@ export default function App() {
               </div>
 
               <ValidationChart validation={validation} excludedGenres={excludedGenres} />
+              <EvaluationChart evaluation={evaluation} />
             </>
           )}
         </>
