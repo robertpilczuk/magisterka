@@ -114,7 +114,7 @@ kilka ocen treningowych i testowych.
 | Model | RMSE | MAE | R² |
 |-------|------|-----|----|
 | Baseline (średnia) | 1.2163 | 0.9733 | 0.0000 |
-| Regresja liniowa | 0.9120 | 0.7177 | 0.3520 |
+| Linear Regression | 0.9120 | 0.7177 | 0.3520 |
 | Ridge | 0.9120 | 0.7177 | 0.3520 |
 | Lasso | 0.9129 | 0.7192 | 0.3508 |
 
@@ -164,3 +164,54 @@ powodów:
    naukowej dla systemów rekomendacji (por. Netflix Prize evaluation protocol)
 
 Wyniki można teraz cytować w pracy jako uczciwe i metodologicznie poprawne.
+
+---
+
+## Zapis podziału z metadanymi — ewaluacja top-N
+
+### Po co zapisujemy train_with_ids.csv i test_with_ids.csv?
+
+Standardowe pliki `X_train.npy` i `y_train.npy` zawierają wyłącznie macierze
+numeryczne bez informacji o tym który rekord należy do którego użytkownika
+i filmu. Uniemożliwia to przeprowadzenie ewaluacji top-N.
+
+**Ewaluacja top-N** (ang. *top-N evaluation*) to podejście które bezpośrednio
+odpowiada na pytanie: *"Czy model rekomenduje filmy które użytkownik rzeczywiście
+obejrzał i wysoko ocenił?"*. Jest to silniejsza forma ewaluacji niż sam RMSE,
+bo sprawdza nie tylko dokładność przewidywanej oceny ale skuteczność
+rankingowania — czy polecane filmy trafiają w gust użytkownika.
+
+### Jak działa ewaluacja top-N
+
+1. Model generuje top-N rekomendacji dla użytkownika na podstawie **zbioru
+   treningowego** (80% wcześniejszych ocen)
+2. Sprawdzamy które z tych N filmów użytkownik **faktycznie ocenił** w zbiorze
+   testowym (20% późniejszych ocen)
+3. Dla filmów które ocenił — porównujemy czy ocena była wysoka (≥4/5 = "polubił")
+4. Wyliczamy metryki rankingowe:
+   - **Precision@N** — ile z N poleconych filmów użytkownik faktycznie polubił
+   - **Recall@N** — jaki % filmów które użytkownik polubił znalazł się w top-N
+   - **NDCG@N** — bierze pod uwagę pozycję trafień (trafienie na miejscu 1 jest ważniejsze niż na miejscu 10)
+
+### Implementacja zapisu
+
+```python
+# Zapisz podział train/test z metadanymi userId i movieId
+train_df[['userId', 'movieId'] + FEATURE_COLS + [TARGET_COL]].to_csv(
+    'data/train_with_ids.csv', index=False
+)
+test_df[['userId', 'movieId'] + FEATURE_COLS + [TARGET_COL]].to_csv(
+    'data/test_with_ids.csv', index=False
+)
+```
+
+### Wynik
+
+| Plik | Rekordy | Opis |
+|------|---------|------|
+| `data/train_with_ids.csv` | 797 758 | 80% wcześniejszych ocen z userId i movieId |
+| `data/test_with_ids.csv` | 202 451 | 20% późniejszych ocen — "przyszłość" użytkownika |
+
+Pliki te są używane przez endpoint `/evaluate/{userId}` do przeprowadzenia
+ewaluacji top-N bezpośrednio w aplikacji — użytkownik może zobaczyć czarno
+na białym czy model trafnie przewidział jego przyszłe wybory.
