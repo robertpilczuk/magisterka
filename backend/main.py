@@ -15,6 +15,7 @@ from predict import (
     get_user_comparison,
     get_user_taste_profile,
     get_recommendation_explanation,
+    get_topn_evaluation,
 )
 from data_loader_books import load_books_data
 from predict_books import (
@@ -309,3 +310,11 @@ def books_user_taste(userId: int):
 def books_random_user():
     available = books_ratings["userId"].unique().tolist()
     return {"userId": int(random.choice(available))}
+
+
+@app.get("/evaluate/{userId}")
+def evaluate_topn(userId: int, top_n: int = 10):
+    _check_user(userId)
+    return get_topn_evaluation(
+        userId, ratings, movies, users, top_n, movie_stats=movie_stats_cache
+    )

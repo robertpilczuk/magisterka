@@ -432,3 +432,130 @@ def get_recommendation_explanation(
             break
 
     return {"movieId": movieId, "title": movie_row["title"], "top_features": top3}
+
+
+def get_topn_evaluation(userId, ratings, movies, users, top_n=10, movie_stats=None):
+    import pandas as pd, math
+
+    data_dir = os.environ.get(
+        "DATA_DIR", os.path.join(os.path.dirname(__file__), "..", "data")
+    )
+    train_df = pd.read_csv(os.path.join(data_dir, "train_with_ids.csv"))
+    test_df = pd.read_csv(os.path.join(data_dir, "test_with_ids.csv"))
+
+    user_train = train_df[train_df["userId"] == userId]
+    user_test = test_df[test_df["userId"] == userId]
+
+    if len(user_train) == 0 or len(user_test) == 0:
+        return {"userId": userId, "error": "Brak danych dla tego użytkownika"}
+
+    user_row = users[users["userId"] == userId].iloc[0]
+    user_avg = user_train["rating"].mean()
+    ms = _get_movie_stats(ratings, movie_stats)
+
+    # przewiduj oceny dla filmów ze zbioru TESTOWEGO
+    test_movies = movies[movies["movieId"].isin(user_test["movieId"])].copy()
+
+    if len(test_movies) == 0:
+        return {"userId": userId, "error": "Brak filmów testowych w datasecie"}
+
+    test_movies = test_movies.merge(
+        ms.rename(columns={"mean": "movie_avg_rating", "count": "movie_rating_count"}),
+        left_on="movieId",
+        right_index=True,
+        how="left",
+    )
+    test_movies["movie_avg_rating"] = test_movies["movie_avg_rating"].fillna(3.5)
+    test_movies["movie_rating_count"] = test_movies["movie_rating_count"].fillna(0)
+    test_movies["age"] = user_row["age"]
+    test_movies["gender_encoded"] = 1 if user_row["gender"] == "M" else 0
+    test_movies["user_avg_rating"] = user_avg
+    test_movies["year"] = (
+        test_movies["title"].str.extract(r"\((\d{4})\)").astype(float).fillna(1995.0)
+    )
+
+    for g in ALL_GENRES:
+        test_movies[g] = test_movies["genres"].str.contains(g, regex=False).astype(int)
+    for occ in ALL_OCCUPATIONS:
+        test_movies[f"occ_{occ}"] = 1 if user_row["occupation"] == occ else 0
+
+    X = scaler.transform(pd.DataFrame(test_movies[FEATURE_COLS].fillna(0)))
+    test_movies["predicted_rating"] = np.clip(lr.predict(X), 1.0, 5.0)
+
+    # połącz z rzeczywistymi ocenami
+    actual_ratings = dict(zip(user_test["movieId"], user_test["rating"]))
+    liked_threshold = 4.0
+
+    results = []
+    for _, row in test_movies.sort_values(
+        "predicted_rating", ascending=False
+    ).iterrows():
+        mid = int(row["movieId"])
+        actual = actual_ratings.get(mid)
+        predicted = round(float(row["predicted_rating"]), 2)
+        hit = (
+            actual is not None
+            and actual >= liked_threshold
+            and predicted >= liked_threshold
+        )
+        results.append(
+            {
+                "rank": len(results) + 1,
+                "movieId": mid,
+                "title": row["title"],
+                "genres": row["genres"],
+                "predicted_rating": predicted,
+                "actual_rating": round(float(actual), 1) if actual else None,
+                "model_recommends": predicted >= liked_threshold,
+                "user_liked": actual >= liked_threshold if actual else False,
+                "hit": hit,
+            }
+        )
+
+    hits = sum(1 for r in results if r["hit"])
+    total = len(results)
+    n_liked = sum(1 for r in results if r["user_liked"])
+    n_pred = sum(1 for r in results if r["model_recommends"])
+
+    precision = hits / n_pred if n_pred > 0 else 0.0
+    recall = hits / n_liked if n_liked > 0 else 0.0
+    f1 = (
+        2 * precision * recall / (precision + recall)
+        if (precision + recall) > 0
+        else 0.0
+    )
+    rmse = float(
+        np.sqrt(
+            np.mean(
+                [
+                    (r["actual_rating"] - r["predicted_rating"]) ** 2
+                    for r in results
+                    if r["actual_rating"]
+                ]
+            )
+        )
+    )
+    mae = float(
+        np.mean(
+            [
+                abs(r["actual_rating"] - r["predicted_rating"])
+                for r in results
+                if r["actual_rating"]
+            ]
+        )
+    )
+
+    return {
+        "userId": userId,
+        "test_count": total,
+        "n_liked_by_user": n_liked,
+        "n_model_recommends": n_pred,
+        "hits": hits,
+        "precision": round(precision, 4),
+        "recall": round(recall, 4),
+        "f1": round(f1, 4),
+        "rmse_on_test": round(rmse, 4),
+        "mae_on_test": round(mae, 4),
+        "liked_threshold": liked_threshold,
+        "recommendations": results,
+    }
