@@ -26,22 +26,22 @@ z **modelem baseline** — najprostszym możliwym punktem odniesienia który
 dla każdego użytkownika i każdego filmu przewiduje tę samą wartość: średnią
 globalną wszystkich ocen (~3.58).
 
-**Wyniki typowe dla MovieLens 1M:**
+**Wyniki dla MovieLens 1M (zbiór testowy):**
 
 | Model | RMSE | MAE | R² |
 |-------|------|-----|----|
-| Baseline | ~1.12 | ~0.93 | 0.00 |
-| Regresja liniowa | ~0.85–0.92 | ~0.67–0.72 | ~0.25–0.35 |
-| Ridge | ~0.84–0.91 | ~0.66–0.71 | ~0.26–0.36 |
-| Lasso | ~0.85–0.92 | ~0.67–0.72 | ~0.25–0.35 |
+| Baseline | 1.2163 | 0.9733 | 0.0000 |
+| Regresja liniowa | 0.9120 | 0.7177 | 0.3520 |
+| Ridge | 0.9120 | 0.7177 | 0.3520 |
+| Lasso | 0.9129 | 0.7192 | 0.3508 |
 
 **Interpretacja:**
 
-Regresja liniowa poprawia RMSE o około **20–25% względem baseline**. Oznacza to
+Regresja liniowa poprawia RMSE o około **25% względem baseline**. Oznacza to
 że model nauczył się realnych zależności w danych — nie jest to wynik przypadkowy.
 
-R² rzędu 0.25–0.35 oznacza że model wyjaśnia około **25–35% zmienności ocen**.
-Pozostałe 65–75% to "szum" — czynniki których model nie może przewidzieć:
+R² = 0.35 oznacza że model wyjaśnia około **35% zmienności ocen**.
+Pozostałe ~65% to "szum" — czynniki których model nie może przewidzieć:
 nastrój użytkownika podczas oglądania, okoliczności seansu, subiektywne
 skojarzenia z aktorami, rekomendacja od przyjaciela.
 
@@ -73,13 +73,13 @@ w tym zbiorze danych.
 Regresja logistyczna rozwiązuje inne zadanie niż liniowa — zamiast przewidywać
 ocenę pyta "czy użytkownik polubi film (ocena ≥ 4)?".
 
-**Typowe wyniki dla MovieLens 1M:**
+**Wyniki dla MovieLens 1M (zbiór testowy, próg domyślny 0.5):**
 
-| Metryka | Typowa wartość | Interpretacja |
-|---------|----------------|---------------|
-| Accuracy | ~0.70–0.75 | 70–75% przewidywań poprawnych |
-| F1-Score | ~0.75–0.80 | dobra równowaga precision/recall |
-| AUC-ROC | ~0.75–0.82 | dobra zdolność rozróżniania klas |
+| Metryka | Wartość | Interpretacja |
+|---------|---------|---------------|
+| Accuracy | 0.7219 | ~72% przewidywań poprawnych |
+| F1-Score | 0.7518 | dobra równowaga precision/recall (0.7585 po optymalizacji progu) |
+| AUC-ROC | 0.7968 | dobra zdolność rozróżniania klas |
 
 **Baseline dla klasyfikacji:** jeśli 62% ocen to ≥4 (co jest typowe dla
 MovieLens ze względu na selection bias), model który zawsze odpowiada "polubi"
