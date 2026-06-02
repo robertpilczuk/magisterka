@@ -189,7 +189,7 @@ Filmy: `01_eda` → `02_preprocessing` → `03_model` → `04_visualizations` *(
 Książki: `06_books_preprocessing` → `07_books_model`
 
 > ⚠️ Notebooki `03_model` i `07_books_model` muszą być uruchomione przed startem backendu —
-> generują pliki `.pkl` i `.npy` potrzebne do działania API.
+> generują pliki modeli `.pkl` oraz `optimal_threshold*.json` potrzebne do działania API.
 
 #### 4. Uruchom backend
 
