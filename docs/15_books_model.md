@@ -22,8 +22,19 @@ tuningiem. Pipeline jest identyczny jak dla filmów (`03_model.ipynb`).
 ### Regresja logistyczna
 
 - **Próg binaryzacji:** ocena >= 7 = "polubi" (1), ocena < 7 = "nie polubi" (0)
-- **Optymalny próg:** 0.4332
 - Próg 7/10 odpowiada ocenie 3.5/5 — analogicznie do progu 4/5 dla filmów
+- **Klasa pozytywna (>= 7) w zbiorze treningowym:** 80.3%
+- **AUC-ROC:** 0.8404
+
+| Próg | Precision | Recall | F1 |
+|------|-----------|--------|----|
+| 0.5 (domyślny) | 0.8679 | 0.9580 | 0.9107 |
+| 0.4332 (optymalny) | 0.8593 | 0.9729 | 0.9126 |
+
+Próg optymalny 0.4332 podnosi czułość (recall 0.9729) i F1 (0.9126) kosztem
+niewielkiego spadku precyzji — model częściej trafnie wskazuje polubione książki.
+Wysoki recall i F1 wynikają częściowo z silnej przewagi klasy pozytywnej (80.3%):
+większość ocen po filtracji jest wysoka.
 
 ---
 
