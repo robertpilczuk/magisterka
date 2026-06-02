@@ -344,7 +344,7 @@ React odbiera i wyświetla rekomendacje
 To kluczowe pytanie dla spójności całego systemu.
 
 Model regresji liniowej podczas treningu "nauczył się" zależności między
-wektorem ~47 liczb a oceną 1–5. Nie wie nic o filmach, użytkownikach ani
+wektorem 45 liczb a oceną 1–5. Nie wie nic o filmach, użytkownikach ani
 gatunkach — widzi tylko liczby.
 
 `predict.py` musi dostarczyć dokładnie te same liczby w dokładnie tej samej

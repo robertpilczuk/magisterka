@@ -285,7 +285,7 @@ Top 10 rekomendacji dla każdego modelu
 ### Dlaczego to jest naukowo uczciwe
 
 Model regresji liniowej nie jest modyfikowany — nadal przewiduje ocenę
-na podstawie tych samych ~47 cech. Jedyna zmiana to jakość danych wejściowych:
+na podstawie tych samych 45 cech. Jedyna zmiana to jakość danych wejściowych:
 zamiast subiektywnej oceny ogólnej, model dostaje ocenę która lepiej
 odzwierciedla prawdziwe preferencje użytkownika.
 

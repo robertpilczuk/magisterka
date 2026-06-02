@@ -73,7 +73,7 @@ export default function NewUserFlow({ API }) {
             setResults(res.data)
             setStep(3)
         } catch (err) {
-            setError(err.response?.data?.detail || 'Błąd generowania rekomendacji')
+            setError(err.response?.data?.detail || t('errors.generate'))
         } finally {
             setLoading(false)
         }

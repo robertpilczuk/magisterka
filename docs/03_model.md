@@ -70,7 +70,7 @@ Wczytujemy przetworzone dane z plików `.npy` (format numpy) oraz listę nazw ce
 ### Weryfikacja wymiarów
 
 Sprawdzamy czy dane mają oczekiwany kształt:
-- `X_train`: powinno być ~800k wierszy i ~47 kolumn (cech)
+- `X_train`: powinno być ~800k wierszy i 45 kolumn (cech)
 - `X_test`: ~200k wierszy, te same kolumny
 - Liczba cech powinna zgadzać się z długością listy `FEATURE_COLS`
 
@@ -88,7 +88,7 @@ Jeśli nasz model regresji liniowej nie bije baseline'u, oznacza to że jest bez
 
 ### Interpretacja metryk baseline
 
-**RMSE baseline** wynosi zazwyczaj około 1.12 dla MovieLens 1M. To wartość którą nasz model musi pobić.
+**RMSE baseline** w naszym podziale (temporalny per-user) wynosi 1.2163. To wartość którą nasz model musi pobić.
 
 ---
 
@@ -151,7 +151,7 @@ y_pred_lr = lr.predict(X_test)  # przewidujemy oceny dla danych testowych
 
 **Overfitting** (przeuczenie) to sytuacja gdy model "zapamiętuje" dane treningowe zamiast uczyć się ogólnych wzorców. Objawia się dobrymi wynikami na danych treningowych i gorszymi na testowych.
 
-Przy dużej liczbie cech (mamy ~47) istnieje ryzyko że model dopasuje się do przypadkowych wzorców w danych treningowych które nie generalizują się na nowe dane.
+Przy dużej liczbie cech (mamy 45) istnieje ryzyko że model dopasuje się do przypadkowych wzorców w danych treningowych które nie generalizują się na nowe dane.
 
 ### Regularyzacja — mechanizm "kary"
 
@@ -179,7 +179,7 @@ Funkcja kosztu Ridge = MSE + alpha · Σβᵢ²
 Funkcja kosztu Lasso = MSE + alpha · Σ|βᵢ|
 ```
 
-**Efekt:** Lasso potrafi wyzerować współczynniki nieistotnych cech — robi automatyczną **selekcję zmiennych**. Zamiast 47 cech model może wybrać że naprawdę istotnych jest np. 20.
+**Efekt:** Lasso potrafi wyzerować współczynniki nieistotnych cech — robi automatyczną **selekcję zmiennych**. Zamiast 45 cech model może wybrać że naprawdę istotnych jest np. 20.
 
 **Dlaczego Lasso zeruje a Ridge nie?** To wynika z geometrii funkcji kosztu — szczegóły matematyczne wykraczają poza zakres pracy, ale efekt jest dobrze udokumentowany w literaturze.
 
@@ -395,13 +395,14 @@ Na końcu notebooka zestawiamy wszystkie modele w jednej tabeli. Ponieważ model
 
 | Model | Zadanie | RMSE | MAE | R² | Accuracy | F1 | AUC |
 |-------|---------|------|-----|----|----------|----|-----|
-| Baseline | Regresja | ~1.12 | ~0.93 | 0.00 | — | — | — |
-| Linear Regression | Regresja | ? | ? | ? | — | — | — |
-| Ridge | Regresja | ? | ? | ? | — | — | — |
-| Lasso | Regresja | ? | ? | ? | — | — | — |
-| Logistic Regression | Klasyfikacja | — | — | — | ? | ? | ? |
+| Baseline | Regresja | 1.2163 | 0.9733 | 0.0000 | — | — | — |
+| Linear Regression | Regresja | 0.9120 | 0.7177 | 0.3520 | — | — | — |
+| Ridge | Regresja | 0.9120 | 0.7177 | 0.3520 | — | — | — |
+| Lasso | Regresja | 0.9129 | 0.7192 | 0.3508 | — | — | — |
+| Logistic Regression | Klasyfikacja | — | — | — | 0.7219 | 0.7518 | 0.7968 |
 
-Wartości "?" uzupełniasz wynikami z uruchomienia notebooka.
+Wartości ze zbioru testowego (zgodne z `03_model.ipynb`). Regresja logistyczna
+przy domyślnym progu 0.5; po optymalizacji progu (0.40) F1 rośnie do 0.7585.
 
 ---
 

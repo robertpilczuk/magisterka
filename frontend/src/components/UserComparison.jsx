@@ -101,7 +101,7 @@ export default function UserComparison({ comparison }) {
                     <RecMiniList recs={common} color="#2ecc71" />
                     {common.length === 0 && (
                         <div style={{ color: '#888', fontSize: '13px' }}>
-                            Brak wspólnych rekomendacji.
+                            {t('errors.no_common_recs')}
                         </div>
                     )}
                 </div>

@@ -176,6 +176,14 @@ def explain(userId: int, movieId: int):
     )
 
 
+@app.get("/evaluate/{userId}")
+def evaluate_topn(userId: int, top_n: int = 10):
+    _check_user(userId)
+    return get_topn_evaluation(
+        userId, ratings, movies, users, top_n, movie_stats=movie_stats_cache
+    )
+
+
 # ─── BOOKS ────────────────────────────────────────────────────────────────────
 @app.get("/books/user/{userId}")
 def books_user_info(userId: int):
@@ -310,11 +318,3 @@ def books_user_taste(userId: int):
 def books_random_user():
     available = books_ratings["userId"].unique().tolist()
     return {"userId": int(random.choice(available))}
-
-
-@app.get("/evaluate/{userId}")
-def evaluate_topn(userId: int, top_n: int = 10):
-    _check_user(userId)
-    return get_topn_evaluation(
-        userId, ratings, movies, users, top_n, movie_stats=movie_stats_cache
-    )

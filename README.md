@@ -189,7 +189,7 @@ Filmy: `01_eda` → `02_preprocessing` → `03_model` → `04_visualizations` *(
 Książki: `06_books_preprocessing` → `07_books_model`
 
 > ⚠️ Notebooki `03_model` i `07_books_model` muszą być uruchomione przed startem backendu —
-> generują pliki `.pkl` i `.npy` potrzebne do działania API.
+> generują pliki modeli `.pkl` oraz `optimal_threshold*.json` potrzebne do działania API.
 
 #### 4. Uruchom backend
 
@@ -287,8 +287,13 @@ Frontend będzie dostępny pod adresem: `http://localhost:5173` (domyślny port 
 | `03_model.ipynb` | Regresja liniowa, Ridge, Lasso, logistyczna, threshold tuning | `*.pkl`, `optimal_threshold.json` |
 | `04_visualizations.ipynb` | Wykresy do pracy magisterskiej | `fig1_*.png` … `fig6_*.png` |
 | `05_group_analysis.ipynb` | RMSE/MAE per płeć, wiek, zawód, aktywność | `fig_group_*.png`, `group_analysis_summary.json` |
-| `06_books_preprocessing.ipynb` | Preprocessing Book-Crossing, filtracja, feature engineering | dane w `books_processed/` |
+| `06_books_preprocessing.ipynb` | Preprocessing Book-Crossing, filtracja, feature engineering | dane w `books_processed/`, `book_crossing_eda.png` |
 | `07_books_model.ipynb` | Modele książkowe + threshold tuning | `*_books.pkl`, `optimal_threshold_books.json` |
+
+> **Wykresy w `notebooks/`:** wersje docelowe do pracy magisterskiej to `fig1_*.png` … `fig6_*.png`
+> (z `04_visualizations`) oraz `fig_group_*.png` (z `05_group_analysis`) — opisane w `docs/07_visualizations.md`
+> i `docs/08_group_analysis.md`. Pliki `plot_*.png` to robocze podglądy generowane inline przez notebooki
+> `01_eda`/`02_preprocessing`/`03_model` (szybka kontrola wzrokowa, nie wersje publikacyjne).
 
 ---
 
