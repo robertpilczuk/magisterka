@@ -4,7 +4,6 @@ Używają TestClient który uruchamia aplikację in-memory bez potrzeby
 uruchamiania serwera — każde zapytanie jest obsługiwane bezpośrednio.
 """
 
-import pytest
 from fastapi.testclient import TestClient
 import sys
 import os
@@ -306,14 +305,16 @@ class TestBooksEndpoints:
         assert res.status_code == 404
 
     def test_books_recommend_returns_recommendations(self):
-        res = client.get("/books/similar-users?min_ratings=50&limit=1")
+        # Najaktywniejszy użytkownik (similar-users sortuje malejąco po liczbie ocen)
+        # zawsze istnieje w niepustym zbiorze — test jest deterministyczny, bez skip.
+        res = client.get("/books/similar-users?limit=1")
         users = res.json()["users"]
-        if not users:
-            pytest.skip("Brak użytkowników z min 50 ocen")
+        assert users, "similar-users powinno zwrócić co najmniej jednego użytkownika"
         uid = users[0]["userId"]
         res2 = client.get(f"/books/recommend/{uid}")
         assert res2.status_code == 200
         assert "recommendations" in res2.json()
+        assert len(res2.json()["recommendations"]) > 0
 
     def test_books_similar_users_returns_200(self):
         res = client.get("/books/similar-users")
