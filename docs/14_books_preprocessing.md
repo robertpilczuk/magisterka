@@ -184,9 +184,9 @@ Każdy użytkownik ma 80% swoich ocen w treningu i 20% w teście.
 
 | Zbiór | Rekordy | Użytkownicy |
 |-------|---------|-------------|
-| Train | 106 302 | wszyscy |
-| Test  | 33 097  | wszyscy |
-| Łącznie | 139 399 | — |
+| Train | 75 466 | wszyscy |
+| Test  | 20 593  | wszyscy |
+| Łącznie | 96 059 | — |
 
 ---
 
@@ -218,7 +218,7 @@ Zapobiega to wyciekowi informacji z danych testowych do modelu.
 | Zawód użytkownika | ✅ one-hot (21 zawodów) | ❌ brak |
 | Timestamp | ✅ temporal split | ❌ losowy split |
 | Implicit feedback | ❌ brak | ✅ usunięte zera |
-| Rozmiar po czyszczeniu | ~1M ocen | ~139k ocen |
+| Rozmiar po czyszczeniu | ~1M ocen | ~96k ocen |
 
 ---
 
