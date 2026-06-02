@@ -12,6 +12,11 @@ W przeciwieństwie do notebooków 01–03, gdzie wykresy były produktem uboczny
 tutaj wykresy są celem samym w sobie — są tworzone z myślą o publikacji, z odpowiednią
 rozdzielczością, tytułami, opisami osi i legendami.
 
+> **Konwencja nazw plików.** Wersje publikacyjne to `fig1_*.png` … `fig6_*.png` (ten notebook)
+> oraz `fig_group_*.png` (`05_group_analysis`). Pliki `plot_*.png` w `notebooks/` to robocze
+> podglądy generowane inline przez notebooki `01_eda`/`02_preprocessing`/`03_model` — służą
+> szybkiej kontroli wzrokowej, nie są wersjami do pracy.
+
 Wszystkie modele i dane są wczytywane z plików — nie trenujemy modeli ponownie.
 To gwarantuje że wykresy odpowiadają dokładnie tym samym modelom które były oceniane
 w notebooku `03_model.ipynb`.
