@@ -49,19 +49,19 @@ export default function EvaluationChart({ evaluation }) {
                 borderRadius: '8px', padding: '10px 16px',
                 fontSize: '13px', color: '#795548', marginBottom: '20px'
             }}>
-                💡 {t('evaluation.threshold')}: ≥{liked_threshold}/5 = polubił ·
-                Zbiór testowy: {test_count} filmów ·
-                Polubił: {n_liked_by_user} · Model polecił: {n_model_recommends}
+                💡 {t('evaluation.threshold')}: ≥{liked_threshold}/5 = {t('evaluation.liked_verb')} ·
+                {' '}{t('evaluation.test_set')}: {test_count} {t('evaluation.movies_unit')} ·
+                {' '}{t('evaluation.liked_count_label')}: {n_liked_by_user} · {t('evaluation.model_rec_label')}: {n_model_recommends}
             </div>
 
             {/* metryki */}
             <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '28px' }}>
-                {metricCard(t('evaluation.hits'),      hits,      '6 trafień = model polecił 6 filmów które user polubił', '#2ecc71')}
+                {metricCard(t('evaluation.hits'),      hits,      t('evaluation.hint_hits'),      '#2ecc71')}
                 {metricCard(t('evaluation.precision'), precision, t('evaluation.hint_precision'), '#4a90d9', 'pct')}
                 {metricCard(t('evaluation.recall'),    recall,    t('evaluation.hint_recall'),    '#e87040', 'pct')}
                 {metricCard(t('evaluation.f1'),        f1,        t('evaluation.hint_f1'),        '#9b59b6', 'num')}
-                {metricCard(t('evaluation.rmse'),      rmse_on_test, 'Błąd predykcji oceny na zbiorze testowym', '#888')}
-                {metricCard(t('evaluation.mae'),       mae_on_test,  'Średnia bezwzględna różnica ocen', '#888')}
+                {metricCard(t('evaluation.rmse'),      rmse_on_test, t('evaluation.hint_rmse'),   '#888')}
+                {metricCard(t('evaluation.mae'),       mae_on_test,  t('evaluation.hint_mae'),    '#888')}
             </div>
 
             {/* pasek F1 */}
@@ -77,13 +77,13 @@ export default function EvaluationChart({ evaluation }) {
                     }} />
                 </div>
                 <div style={{ fontSize: '11px', color: '#aaa', marginTop: '4px' }}>
-                    {f1 >= 0.7 ? '✅ Dobry wynik' : f1 >= 0.5 ? '🟡 Średni wynik' : '❌ Słaby wynik'}
+                    {f1 >= 0.7 ? t('evaluation.quality_good') : f1 >= 0.5 ? t('evaluation.quality_mid') : t('evaluation.quality_poor')}
                 </div>
             </div>
 
             {/* tabela */}
             <h3 style={{ marginBottom: '12px' }}>
-                Filmy ze zbioru testowego — predykcja vs rzeczywistość
+                {t('evaluation.table_heading')}
             </h3>
             <div style={{ overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
@@ -181,9 +181,9 @@ export default function EvaluationChart({ evaluation }) {
                 marginTop: '12px', display: 'flex', gap: '16px',
                 flexWrap: 'wrap', fontSize: '12px', color: '#888'
             }}>
-                <span>🎯 Trafienie (model polecił + user polubił)</span>
-                <span>❌ Fałszywy alarm (model polecił, user nie polubił)</span>
-                <span>⚠️ Przeoczenie (model nie polecił, user polubił)</span>
+                <span>{t('evaluation.legend_hit')}</span>
+                <span>{t('evaluation.legend_false_alarm')}</span>
+                <span>{t('evaluation.legend_miss')}</span>
             </div>
         </div>
     )
