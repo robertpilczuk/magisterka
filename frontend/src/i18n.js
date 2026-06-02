@@ -394,6 +394,14 @@ const translations = {
             threshold_label: 'Próg',
         },
 
+        // ── Komunikaty błędów / puste stany ───────────────────
+        errors: {
+            generate: 'Błąd generowania rekomendacji',
+            connection: 'Błąd połączenia z API',
+            min_3_films: 'Oceń co najmniej 3 filmy',
+            no_common_recs: 'Brak wspólnych rekomendacji.',
+        },
+
         // ── Aplikacja książkowa — ogólne ──────────────────────
         books_app: {
             title: 'Book Recommender',
@@ -879,6 +887,14 @@ const translations = {
             films_label: '🎬 Films',
             books_label: '📚 Books',
             threshold_label: 'Threshold',
+        },
+
+        // ── Error messages / empty states ─────────────────────
+        errors: {
+            generate: 'Failed to generate recommendations',
+            connection: 'API connection error',
+            min_3_films: 'Rate at least 3 films',
+            no_common_recs: 'No common recommendations.',
         },
 
         // ── Aplikacja książkowa — ogólne ──────────────────────

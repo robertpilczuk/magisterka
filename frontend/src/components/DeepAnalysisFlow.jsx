@@ -149,7 +149,7 @@ export default function DeepAnalysisFlow({ API }) {
             }
         }
         if (ratingsPayload.length < 3) {
-            setError('Oceń co najmniej 3 filmy')
+            setError(t('errors.min_3_films'))
             return
         }
         setLoading(true)
@@ -161,7 +161,7 @@ export default function DeepAnalysisFlow({ API }) {
             setResults({ ...res.data, ratingsPayload, weights })
             setStep(4)
         } catch (err) {
-            setError(err.response?.data?.detail || 'Błąd generowania rekomendacji')
+            setError(err.response?.data?.detail || t('errors.generate'))
         } finally {
             setLoading(false)
         }

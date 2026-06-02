@@ -290,7 +290,7 @@ function NewUserBooks() {
             })
             setResults(res.data); setStep(3)
         } catch (err) {
-            setError(err.response?.data?.detail || 'Błąd generowania rekomendacji')
+            setError(err.response?.data?.detail || t('errors.generate'))
         } finally {
             setLoading(false)
         }
@@ -514,7 +514,7 @@ export default function BooksApp() {
             setValidation(valid.data)
             setTasteProfile(taste.data)
         } catch (err) {
-            setError(err.response?.data?.detail || 'Błąd połączenia z API')
+            setError(err.response?.data?.detail || t('errors.connection'))
         } finally {
             setLoading(false)
         }
@@ -530,7 +530,7 @@ export default function BooksApp() {
             setUserId(String(res.data.userId))
             fetchAll(res.data.userId)
         } catch (err) {
-            setError(err.response?.data?.detail || 'Błąd połączenia z API')
+            setError(err.response?.data?.detail || t('errors.connection'))
         }
     }
 
