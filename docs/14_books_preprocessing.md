@@ -101,7 +101,7 @@ books['year'] = books['year'].fillna(books['year'].median())
 
 ### 5. Filtrowanie aktywnych użytkowników i popularnych książek
 
-Użytkownicy z mniej niż 5 ocenami i książki z mniej niż 5 ocenami
+Użytkownicy z mniej niż 20 ocenami i książki z mniej niż 5 ocenami
 zostają usunięte. Powody:
 
 - **Użytkownicy z małą liczbą ocen** — model nie ma wystarczającego sygnału
@@ -111,7 +111,8 @@ zostają usunięte. Powody:
 - **Redukcja szumu** — duża liczba rzadkich przypadków pogarsza metryki
   bez wnoszenia wartości predykcyjnej.
 
-Próg 5 to kompromis — wyższy próg daje lepszy model ale mniejszy dataset.
+Progi (20 ocen na użytkownika, 5 ocen na książkę) to kompromis — wyższy próg
+daje lepszy model ale mniejszy dataset.
 
 ### 6. Łączenie tabel (merge)
 
