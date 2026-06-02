@@ -3,7 +3,7 @@ import axios from 'axios'
 import { useLang } from '../LangContext'
 import Spinner from './Spinner'
 
-const API = 'http://localhost:8000'
+import { API } from '../config'
 
 const AGE_RANGES = [
     { label: '<18',   min: 5,  max: 17  },

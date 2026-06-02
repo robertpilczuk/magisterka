@@ -5,7 +5,7 @@ import Spinner from './Spinner'
 import SimilarBooksUsersFilter from './SimilarBooksUsersFilter'
 import BookTasteProfile from './BookTasteProfile'
 
-const API = 'http://localhost:8000'
+import { API } from '../config'
 
 // ─── BookUserProfile ──────────────────────────────────────────────────────────
 function BookUserProfile({ profile }) {

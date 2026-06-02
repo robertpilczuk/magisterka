@@ -2,7 +2,7 @@ import { useState } from 'react'
 import axios from 'axios'
 import { useLang } from '../LangContext'
 
-const API = 'http://localhost:8000'
+import { API } from '../config'
 
 export default function RecommendationCard({ rank, rec, type, userId }) {
     const { t } = useLang()
