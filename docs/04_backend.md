@@ -410,9 +410,9 @@ Optymalny próg jest zapisywany do pliku:
 
 ```json
 {
-  "optimal_threshold": 0.42,
-  "f1_at_optimal": 0.7823,
-  "f1_at_default": 0.7701
+  "optimal_threshold": 0.4,
+  "f1_at_optimal": 0.7585,
+  "f1_at_default": 0.7518
 }
 ```
 
