@@ -12,7 +12,7 @@ const MODELS = [
         emoji: '🎯',
         name: 'Logistic Regression',
         color: '#e87040',
-        metrics: { films: { threshold: '~0.4' }, books: { threshold: '0.4006' } },
+        metrics: { films: { threshold: '~0.4' }, books: { threshold: '~0.43' } },
         descKey: 'logistic_desc',
     },
     {
