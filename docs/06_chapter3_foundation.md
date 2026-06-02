@@ -58,7 +58,7 @@ Jeśli Ridge i Lasso osiągają zbliżone wyniki do zwykłej regresji liniowej
 - Model nie cierpi na poważny overfitting
 - Dane treningowe (800k obserwacji) są wystarczająco duże żeby model
   nie "zapamiętywał" przypadkowych wzorców
-- Większość z ~47 cech ma realne znaczenie predykcyjne
+- Większość z 45 cech ma realne znaczenie predykcyjne
 
 Jeśli Lasso wyraźnie poprawia wyniki, oznacza to że część cech jest zbędna
 i automatyczna selekcja zmiennych przynosi korzyść.

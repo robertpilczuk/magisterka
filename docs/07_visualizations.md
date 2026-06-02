@@ -302,7 +302,7 @@ o największym wpływie niezależnie od kierunku (dodatni czy ujemny).
 Następnie sortujemy po wartości dla czytelności wykresu (od najbardziej
 ujemnego do najbardziej dodatniego).
 
-Dlaczego top 20 a nie wszystkie ~47? Pełny wykres byłby nieczytelny.
+Dlaczego top 20 a nie wszystkie 45? Pełny wykres byłby nieczytelny.
 Top 20 pokazuje najważniejsze zależności bez "szumu" nieistotnych cech.
 
 ### Kolorowanie słupków
@@ -460,9 +460,9 @@ sns.heatmap(corr, annot=True, fmt='.3f', cmap='RdBu_r',
 - `vmin=-1, vmax=1` — skala od -1 do +1 (pełny zakres korelacji)
 - `linewidths=0.5` — delikatne linie między komórkami dla czytelności
 
-### Dlaczego tylko kluczowe cechy a nie wszystkie 47?
+### Dlaczego tylko kluczowe cechy a nie wszystkie 45?
 
-Macierz korelacji dla 47 cech miałaby 47×47 = 2209 komórek — nieczytelna.
+Macierz korelacji dla 45 cech miałaby 45×45 = 2025 komórek — nieczytelna.
 Wybieramy 7 kluczowych zmiennych numerycznych które mają największe znaczenie
 interpretacyjne:
 

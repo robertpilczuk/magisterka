@@ -181,7 +181,7 @@ FEATURE_COLS = [
 ]
 ```
 
-Łącznie około 45–47 zmiennych niezależnych.
+Łącznie 45 zmiennych niezależnych.
 
 ### Czego NIE używamy i dlaczego?
 
@@ -272,8 +272,8 @@ Po tym etapie mamy:
 
 | Artefakt | Opis |
 |----------|------|
-| `X_train.npy` | ~800k przykładów, ~47 cech, przeskalowane |
-| `X_test.npy` | ~200k przykładów, ~47 cech, przeskalowane |
+| `X_train.npy` | ~800k przykładów, 45 cech, przeskalowane |
+| `X_test.npy` | ~200k przykładów, 45 cech, przeskalowane |
 | `y_train.npy` | ~800k ocen (1–5) — wartości docelowe dla treningu |
 | `y_test.npy` | ~200k ocen (1–5) — wartości docelowe dla testowania |
 | `scaler.pkl` | Parametry skalowania (do użycia w aplikacji) |
