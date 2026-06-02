@@ -317,8 +317,8 @@ napisaną z myślą o osobach bez doświadczenia w ML i statystyce.
 | `01_eda.md` | EDA — wyjaśnienie każdej komórki i wykresu |
 | `02_preprocessing.md` | Preprocessing — One-Hot Encoding, skalowanie, data leakage |
 | `03_model.md` | Modele — regresja liniowa, Ridge, Lasso, logistyczna, metryki |
-| `04_backend.md` + `04_backend_update.md` | Backend FastAPI — endpointy, logika predykcji |
-| `05_frontend.md` + `05_frontend_update.md` | Frontend React — komponenty, zarządzanie stanem |
+| `04_backend.md` | Backend FastAPI — endpointy, logika predykcji (z sekcją aktualizacji) |
+| `05_frontend.md` | Frontend React — komponenty, zarządzanie stanem (z sekcją aktualizacji) |
 | `06_chapter3_foundation.md` | Podwaliny pod Rozdział III — wnioski, ograniczenia, porównanie modeli |
 | `07_visualizations.md` | Wykresy — jak czytać i opisywać w pracy |
 | `08_group_analysis.md` | Analiza per-grupa — long-tail problem, selection bias |

@@ -101,7 +101,7 @@ books['year'] = books['year'].fillna(books['year'].median())
 
 ### 5. Filtrowanie aktywnych użytkowników i popularnych książek
 
-Użytkownicy z mniej niż 5 ocenami i książki z mniej niż 5 ocenami
+Użytkownicy z mniej niż 20 ocenami i książki z mniej niż 5 ocenami
 zostają usunięte. Powody:
 
 - **Użytkownicy z małą liczbą ocen** — model nie ma wystarczającego sygnału
@@ -111,7 +111,8 @@ zostają usunięte. Powody:
 - **Redukcja szumu** — duża liczba rzadkich przypadków pogarsza metryki
   bez wnoszenia wartości predykcyjnej.
 
-Próg 5 to kompromis — wyższy próg daje lepszy model ale mniejszy dataset.
+Progi (20 ocen na użytkownika, 5 ocen na książkę) to kompromis — wyższy próg
+daje lepszy model ale mniejszy dataset.
 
 ### 6. Łączenie tabel (merge)
 
@@ -184,9 +185,9 @@ Każdy użytkownik ma 80% swoich ocen w treningu i 20% w teście.
 
 | Zbiór | Rekordy | Użytkownicy |
 |-------|---------|-------------|
-| Train | 106 302 | wszyscy |
-| Test  | 33 097  | wszyscy |
-| Łącznie | 139 399 | — |
+| Train | 75 466 | wszyscy |
+| Test  | 20 593  | wszyscy |
+| Łącznie | 96 059 | — |
 
 ---
 
@@ -218,7 +219,7 @@ Zapobiega to wyciekowi informacji z danych testowych do modelu.
 | Zawód użytkownika | ✅ one-hot (21 zawodów) | ❌ brak |
 | Timestamp | ✅ temporal split | ❌ losowy split |
 | Implicit feedback | ❌ brak | ✅ usunięte zera |
-| Rozmiar po czyszczeniu | ~1M ocen | ~139k ocen |
+| Rozmiar po czyszczeniu | ~1M ocen | ~96k ocen |
 
 ---
 
