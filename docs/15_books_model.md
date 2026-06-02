@@ -22,7 +22,7 @@ tuningiem. Pipeline jest identyczny jak dla filmów (`03_model.ipynb`).
 ### Regresja logistyczna
 
 - **Próg binaryzacji:** ocena >= 7 = "polubi" (1), ocena < 7 = "nie polubi" (0)
-- **Optymalny próg:** 0.4006
+- **Optymalny próg:** 0.4332
 - Próg 7/10 odpowiada ocenie 3.5/5 — analogicznie do progu 4/5 dla filmów
 
 ---
@@ -95,7 +95,7 @@ f1_scores = 2 * precisions * recalls / (precisions + recalls + 1e-8)
 optimal_threshold = float(thresholds[np.argmax(f1_scores)])
 ```
 
-Optymalny próg 0.4006 (niższy niż domyślne 0.5) oznacza że model jest
+Optymalny próg 0.4332 (niższy niż domyślne 0.5) oznacza że model jest
 bardziej skłonny do rekomendowania książek — obniżamy poprzeczkę żeby
 zwiększyć liczbę trafnych rekomendacji kosztem precyzji.
 
@@ -111,7 +111,7 @@ Wszystkie modele zapisane w `backend/model_books/`:
 | `ridge_model_books.pkl` | Wytrenowany model Ridge |
 | `lasso_model_books.pkl` | Wytrenowany model Lasso |
 | `logistic_model_books.pkl` | Wytrenowana regresja logistyczna |
-| `optimal_threshold_books.json` | Optymalny próg: `{"optimal_threshold": 0.4006}` |
+| `optimal_threshold_books.json` | Optymalny próg: `{"optimal_threshold": 0.4331617712972774}` (≈ 0.4332) |
 
 ---
 
@@ -126,5 +126,5 @@ Wyniki dla książek wzmacniają główną tezę pracy na dwa sposoby:
    liczbie cech sugeruje że preferencje czytelnicze są bardziej przewidywalne
    niż filmowe — interesująca obserwacja do omówienia w rozdziale z wnioskami
 
-3. **Argument dla regresji logistycznej** — optymalny próg 0.4006 ≠ 0.5
+3. **Argument dla regresji logistycznej** — optymalny próg 0.4332 ≠ 0.5
    potwierdza że threshold tuning jest istotny niezależnie od typu treści
