@@ -237,7 +237,7 @@ app.add_middleware(
 **CORS** (Cross-Origin Resource Sharing) to mechanizm bezpieczeństwa przeglądarek
 który domyślnie blokuje zapytania HTTP między różnymi domenami/portami.
 
-Frontend React działa na `http://localhost:3000`.
+Frontend React działa na `http://localhost:5173`.
 Backend FastAPI działa na `http://localhost:8000`.
 To różne porty — przeglądarka bez CORS zablokowałaby zapytania frontendu do backendu.
 
