@@ -88,7 +88,7 @@ Jeśli nasz model regresji liniowej nie bije baseline'u, oznacza to że jest bez
 
 ### Interpretacja metryk baseline
 
-**RMSE baseline** wynosi zazwyczaj około 1.12 dla MovieLens 1M. To wartość którą nasz model musi pobić.
+**RMSE baseline** w naszym podziale (temporalny per-user) wynosi 1.2163. To wartość którą nasz model musi pobić.
 
 ---
 
@@ -395,13 +395,14 @@ Na końcu notebooka zestawiamy wszystkie modele w jednej tabeli. Ponieważ model
 
 | Model | Zadanie | RMSE | MAE | R² | Accuracy | F1 | AUC |
 |-------|---------|------|-----|----|----------|----|-----|
-| Baseline | Regresja | ~1.12 | ~0.93 | 0.00 | — | — | — |
-| Linear Regression | Regresja | ? | ? | ? | — | — | — |
-| Ridge | Regresja | ? | ? | ? | — | — | — |
-| Lasso | Regresja | ? | ? | ? | — | — | — |
-| Logistic Regression | Klasyfikacja | — | — | — | ? | ? | ? |
+| Baseline | Regresja | 1.2163 | 0.9733 | 0.0000 | — | — | — |
+| Linear Regression | Regresja | 0.9120 | 0.7177 | 0.3520 | — | — | — |
+| Ridge | Regresja | 0.9120 | 0.7177 | 0.3520 | — | — | — |
+| Lasso | Regresja | 0.9129 | 0.7192 | 0.3508 | — | — | — |
+| Logistic Regression | Klasyfikacja | — | — | — | 0.7219 | 0.7518 | 0.7968 |
 
-Wartości "?" uzupełniasz wynikami z uruchomienia notebooka.
+Wartości ze zbioru testowego (zgodne z `03_model.ipynb`). Regresja logistyczna
+przy domyślnym progu 0.5; po optymalizacji progu (0.40) F1 rośnie do 0.7585.
 
 ---
 
