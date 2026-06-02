@@ -113,13 +113,13 @@ export default function AboutPage() {
                             {model.metrics.films?.rmse && (
                                 <div>
                                     <div style={{ fontSize: '11px', color: '#888', marginBottom: '6px', fontWeight: '600' }}>
-                                        🎬 Filmy
+                                        {t('about.films_label')}
                                     </div>
                                     <MetricBadge label="RMSE" value={model.metrics.films.rmse} color={model.color} />
                                     <MetricBadge label="MAE"  value={model.metrics.films.mae}  color={model.color} />
                                     <MetricBadge label="R²"   value={model.metrics.films.r2}   color={model.color} />
                                     <div style={{ fontSize: '11px', color: '#888', marginTop: '8px', marginBottom: '6px', fontWeight: '600' }}>
-                                        📚 Książki
+                                        {t('about.books_label')}
                                     </div>
                                     <MetricBadge label="RMSE" value={model.metrics.books.rmse} color={model.color} />
                                     <MetricBadge label="MAE"  value={model.metrics.books.mae}  color={model.color} />
@@ -129,13 +129,13 @@ export default function AboutPage() {
                             {model.metrics.films?.threshold && (
                                 <div>
                                     <div style={{ fontSize: '11px', color: '#888', marginBottom: '6px', fontWeight: '600' }}>
-                                        🎬 Filmy
+                                        {t('about.films_label')}
                                     </div>
-                                    <MetricBadge label="Próg" value={model.metrics.films.threshold} color={model.color} />
+                                    <MetricBadge label={t('about.threshold_label')} value={model.metrics.films.threshold} color={model.color} />
                                     <div style={{ fontSize: '11px', color: '#888', marginTop: '8px', marginBottom: '6px', fontWeight: '600' }}>
-                                        📚 Książki
+                                        {t('about.books_label')}
                                     </div>
-                                    <MetricBadge label="Próg" value={model.metrics.books.threshold} color={model.color} />
+                                    <MetricBadge label={t('about.threshold_label')} value={model.metrics.books.threshold} color={model.color} />
                                 </div>
                             )}
                         </div>

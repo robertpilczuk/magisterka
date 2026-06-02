@@ -389,6 +389,9 @@ const translations = {
             logistic_desc: 'Klasyfikuje czy użytkownik "polubi" pozycję (binarnie). Optymalizowany próg decyzyjny zamiast domyślnego 0.5.',
             movies_dataset_desc: 'MovieLens 1M — 1 000 209 ocen, 6 040 użytkowników, 3 883 filmy. Podział temporalny per-user.',
             books_dataset_desc: 'Book-Crossing — 96 059 ocen (po filtracji min. 20 ocen/user), 3 419 użytkowników, 13 599 książek.',
+            films_label: '🎬 Filmy',
+            books_label: '📚 Książki',
+            threshold_label: 'Próg',
         },
 
         // ── Aplikacja książkowa — ogólne ──────────────────────
@@ -873,6 +876,9 @@ const translations = {
             logistic_desc: 'Classifies whether a user will "like" an item (binary). Optimized decision threshold instead of default 0.5.',
             movies_dataset_desc: 'MovieLens 1M — 1,000,209 ratings, 6,040 users, 3,883 films. Per-user temporal split.',
             books_dataset_desc: 'Book-Crossing — 96,059 ratings (after filtering min. 20 ratings/user), 3,419 users, 13,599 books.',
+            films_label: '🎬 Films',
+            books_label: '📚 Books',
+            threshold_label: 'Threshold',
         },
 
         // ── Aplikacja książkowa — ogólne ──────────────────────
